@@ -1,0 +1,27 @@
+@use 'utilities' as *;
+
+:root {
+  /* Colors (placeholders) */
+  --color-bg: #fff;
+  --color-text: #000;
+  --color-accent: #0033cc;
+  --color-on-accent: #fff;
+
+  /* Spacing */
+  --space-1: #{rem(4)};
+  --space-2: #{rem(8)};
+  --space-3: #{rem(12)};
+  --space-4: #{rem(16)};
+  --space-5: #{rem(24)};
+  --space-6: #{rem(32)};
+  --space-7: #{rem(48)};
+  --space-8: #{rem(64)};
+
+  /* Type scale */
+  --font-size-sm: #{rem(14)};
+  --font-size-base: #{rem(16)};
+  --font-size-md: #{rem(20)};
+  --font-size-lg: #{rem(24)};
+  --font-size-xl: #{rem(32)};
+  --font-size-2xl: #{rem(40)};
+}

@@ -1,0 +1,12 @@
+@use 'sass:math';
+
+$root-font-size: 16;
+
+// Converts a pixel value (with or without `px`) to rem: rem(24) -> 1.5rem
+@function rem($px) {
+  @if math.is-unitless($px) == false {
+    $px: math.div($px, 1px);
+  }
+
+  @return math.div($px, $root-font-size) * 1rem;
+}
