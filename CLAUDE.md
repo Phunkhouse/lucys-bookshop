@@ -34,7 +34,7 @@ Decision notes: `docs/decisions/`. The repo is public.
 
 ## Testing
 
-- Vitest for unit/service tests, Playwright for a few end-to-end flows. *.test.ts = unit (node), *.test.tsx = component (jsdom), e2e/*.spec.ts = Playwright.
+- Vitest for unit/service tests, Playwright for a few end-to-end flows. *.test.ts = unit (node), _.test.tsx = component (jsdom), e2e/_.spec.ts = Playwright.
 - Prefer getByRole queries. Never use fixed sleeps in tests.
 - The reservation race-condition test runs against a real Postgres, not mocks.
 - For risky logic (reservations, totals, SPAYD, access control), write the test cases first and wait for approval before implementing.

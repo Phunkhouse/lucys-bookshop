@@ -8,7 +8,9 @@ export function parseEnv(source: Record<string, string | undefined>) {
   const result = envSchema.safeParse(source)
 
   if (!result.success) {
-    throw new Error(`Invalid environment variables:\n${z.prettifyError(result.error)}`)
+    throw new Error(
+      `Invalid environment variables:\n${z.prettifyError(result.error)}`,
+    )
   }
 
   return result.data
