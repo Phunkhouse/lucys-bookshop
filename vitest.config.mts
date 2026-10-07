@@ -13,7 +13,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'node',
-          include: ['src/**/*.test.ts']
+          include: ['src/**/*.test.ts'],
         },
       },
       {
@@ -22,8 +22,8 @@ export default defineConfig({
           name: 'components',
           environment: 'jsdom',
           include: ['src/**/*.test.tsx'],
-          setupFiles: ['./vitest.setup.ts']
-        }
+          setupFiles: ['./vitest.setup.ts'],
+        },
       },
     ],
   },
