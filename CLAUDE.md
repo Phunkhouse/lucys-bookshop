@@ -46,6 +46,7 @@ Decision notes: `docs/decisions/`. The repo is public.
 - Don't add dependencies without saying why in the PR.
 - Ask before changing the spec's decisions. Propose the change instead.
 - PR titles use Conventional Commits (feat:, fix:, docs:, test:, ci:, build:, style:, refactor:).
+- Open PRs with gh pr create using a Conventional Commits title. Never merge. The developer merges after review.
 
 ## Never commit
 
