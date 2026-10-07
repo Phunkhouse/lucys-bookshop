@@ -24,6 +24,7 @@ Decision notes: `docs/decisions/`. The repo is public.
 - Reservation expiry is lazy (query-based). No job frees books.
 - Don't use Vercel-only features (Blob, Edge Config, Vercel Cron, image optimization).
 - Planned folders may not exist yet. Create them when first needed, don't invent others without asking.
+- Components live in src/components/<Name>/ with <Name>.tsx, <Name>.module.scss, <Name>.test.tsx and an index.ts that re-exports. Named exports only (default exports only for Next route files). No barrel files that re-export many components.
 
 ## UI and i18n
 
@@ -33,7 +34,8 @@ Decision notes: `docs/decisions/`. The repo is public.
 
 ## Testing
 
-- Vitest for unit/service tests, Playwright for a few end-to-end flows.
+- Vitest for unit/service tests, Playwright for a few end-to-end flows. *.test.ts = unit (node), *.test.tsx = component (jsdom), e2e/*.spec.ts = Playwright.
+- Prefer getByRole queries. Never use fixed sleeps in tests.
 - The reservation race-condition test runs against a real Postgres, not mocks.
 - For risky logic (reservations, totals, SPAYD, access control), write the test cases first and wait for approval before implementing.
 

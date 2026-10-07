@@ -13,12 +13,12 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "test:e2e": "playwright test",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:ping": "tsx scripts/db-ping.ts"
-    
   },
   "dependencies": {
     "dotenv": "^18.0.5",
@@ -32,14 +32,19 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.2",
     "babel-plugin-react-compiler": "1.0.0",
     "drizzle-kit": "^1.0.0-rc.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
+    "jsdom": "^30.1.2",
     "prettier": "3.9.9",
     "tsx": "^4.23.15",
     "typescript": "^5",
