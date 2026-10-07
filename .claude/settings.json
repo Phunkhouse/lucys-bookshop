@@ -6,10 +6,6 @@
       "Bash(gh pr checks *)",
       "Bash(gh run view *)"
     ],
-    "deny": [
-      "Bash(gh pr merge *)",
-      "Bash(gh api *)",
-      "Bash(gh secret *)"
-    ]
+    "deny": ["Bash(gh pr merge *)", "Bash(gh api *)", "Bash(gh secret *)"]
   }
 }
