@@ -45,6 +45,7 @@ Decision notes: `docs/decisions/`. The repo is public.
 - Keep PRs small. Describe what changed and why in the PR body.
 - Don't add dependencies without saying why in the PR.
 - Ask before changing the spec's decisions. Propose the change instead.
+- PR titles use Conventional Commits (feat:, fix:, docs:, test:, ci:, build:, style:, refactor:).
 
 ## Never commit
 
