@@ -1,3 +1,1 @@
 This a learning project, that will implement e-shop selling books. Seed data are fake.
-
-Test branch
