@@ -1,0 +1,13 @@
+{
+  "Site": {
+    "description": "Použité knihy k prodeji, každá jen v jednom výtisku."
+  },
+  "Home": {
+    "title": "Vítejte v obchodě {shopName}",
+    "intro": "Knihy, které jsem dočetla, hledají nový domov. Každá je jen jedna."
+  },
+  "Nav": {
+    "catalog": "Knihy",
+    "cart": "Košík"
+  }
+}
