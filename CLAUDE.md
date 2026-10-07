@@ -13,7 +13,7 @@ Decision notes: `docs/decisions/`. The repo is public.
 - Lint/format: ESLint + Prettier. Run `pnpm check` before finishing.
 - React Compiler is enabled. Don't add `useMemo`, `useCallback`, `React.memo` without a measured reason. With React Hook Form use `useWatch`, not `watch()`.
 - Validation: Zod, shared between client and server. Money is integer minor units (`priceMinor`), never floats.
-- DB: Drizzle + Postgres. Schema changes only through generated migrations, never by hand-editing the database.
+- DB: Drizzle + Postgres. Schema changes only through generated migrations, never by hand-editing the database. Drizzle is on v1 (rc). Use the v1 docs and APIs, not 0.x patterns.
 
 ## Architecture
 
