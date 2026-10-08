@@ -1,6 +1,6 @@
-# Used Books E-shop: Spec v7
+# Used Books E-shop: Spec v8
 
-Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04) and the M1 planning round (2026-10-08) are merged in. Sections that changed from v6 are marked **(v7)**; earlier version marks are kept as history. Remaining open items are in section 13.
+Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04) and the M1 and M2 planning rounds (2026-10-08) are merged in. Sections that changed from v7 are marked **(v8)**; v7 marks are kept as history; earlier version marks are kept as history. Remaining open items are in section 13.
 
 ## 1. Purpose **(v4)**
 
@@ -19,7 +19,7 @@ The developer writes almost no code. His role is the one described in many AI-en
 - **Developer owns:** the spec, acceptance criteria, review of every change, and the final decision to merge.
 - **Small pull requests.** One feature or one concern per PR on a branch, never direct pushes to main. CI (lint, typecheck, tests, build) is the first gate; the developer's review is the second.
 - **Tests as the spec for risky logic.** For reservations, order totals, payment matching, and access control, the developer approves the test cases first, then Claude implements. This is the lowest-effort way to stay in control.
-- **High-scrutiny review areas** (read line by line): the reservation transaction, order and total calculation, SPAYD generation, auth and role checks on admin routes, database migrations, image upload verification, and anything touching secrets or CI deploy tokens.
+- **High-scrutiny review areas** (read line by line): the reservation transaction, order and total calculation, SPAYD generation, auth checks on admin routes, database migrations, image upload verification, and anything touching secrets or CI deploy tokens.
 - **Low-scrutiny areas** (skim, rely on CI and a visual check): styling, copy, boilerplate.
 - **A second pair of eyes:** after Claude writes a PR, a separate review pass (a fresh Claude session or subagent that has not seen the writing) checks it against the spec before the developer reads it.
 - **Definition of done per milestone:** CI green, tests for the risky logic, checked on a real phone, and a short "why this design" note in `docs/decisions/`.
@@ -40,7 +40,7 @@ Each listing is one physical copy:
 - **UI language: Czech only for v1, but the app is prepared for English** (see 10, internationalization).
 - Books are used, in mixed languages. Roughly 50-300 listings at a time.
 - No buyer accounts in v1. Guest checkout.
-- **Two admin users:** the developer (owner) and the seller (seller role). The developer lists books at first, then hands the work to the seller and keeps access.
+- **Two admin users with identical rights (v8):** the developer and the seller. There are no separate roles. The developer lists books at first, then hands the work to the seller and keeps access.
 - **Payment: QR bank transfer to the seller's Raiffeisenbank account, confirmed manually by the seller in admin; or cash on personal pickup.**
 - **Reservation window: 48 hours, expired reservations are released silently.**
 - **No custom domain for now.** The shop lives at a free `<name>.vercel.app` address.
@@ -171,11 +171,11 @@ Statuses: `pending_payment` → `paid` → `shipped` → `completed`, plus `canc
 - **Delivered by email to the seller's own address (v5)** through a `SellerNotifier` interface. The planned implementation uses a free provider's sandbox sender, which can deliver only to the email of the provider account owner, so the production provider account must be registered with her address (during development, notifications go to the developer's own address). To verify in a short spike at M5: reliability of the sandbox sender, spam-folder behavior, and a fallback (a single verified sender address on another free provider). A Telegram bot stays an option behind the same interface.
 - **Buyers receive no emails in v1.** An `EmailSender` interface is added later together with a custom domain and a verified sending domain.
 
-### 6.9 Admin area **(v7)**
+### 6.9 Admin area **(v8)**
 
 **Essential. Without it the seller can't run the shop.** Built as part of the app, not as a CMS, because the admin is the business logic (reservations, orders, payments).
 
-- Login with **Better Auth**, invite-only, two roles: `owner` (developer) and `seller`. Auth.js is in maintenance mode and not used.
+- Login with **Better Auth**. There is a single admin level: every signed-in user has full admin rights, and there are two accounts (the developer and the seller). Public sign-up is disabled; accounts are created only by a script (`scripts/`) run against the target database, so being signed in is the same as being allowed. No invite flow, user-management screen or email is needed. Every server action and service entry point checks the session itself; the proxy redirect is only a convenience. Auth.js is in maintenance mode and not used.
 - Add/edit book form: title, author, genres, language, condition, condition note, description, price, ISBN, **photos (up to 5, reorderable, can be added, replaced or removed at any time)**.
 - A listing can be saved **without photos**. It shows a "photos coming soon" placeholder to buyers and a "no photos" flag in admin.
 - **Phone-first listing flow:** camera input for photos, resize in the browser, upload straight to object storage with a presigned URL, minimal required fields.
@@ -191,7 +191,7 @@ Statuses: `pending_payment` → `paid` → `shipped` → `completed`, plus `canc
 - About/contact page, shipping and payment info, terms and conditions, privacy policy, cookie notice (if analytics or marketing cookies are used).
 - Wording depends on the seller's legal status (section 9).
 
-## 7. Data model (draft) **(v7)**
+## 7. Data model (draft) **(v8)**
 
 - **Book**: id, **shortId** (random, unique, immutable; used in the URL; the slug is computed from the title and not stored), title, author, isbn (indexed, not unique), description, language, condition (`like_new` | `used`), conditionNote, priceMinor (integer), currency, status (available | reserved | sold | hidden), reservedUntil, reservedByOrderId, createdAt, updatedAt, soldAt
 - **Genre**: id, key, slug (labels live in the messages files under `Genres.<key>`)
@@ -199,7 +199,7 @@ Statuses: `pending_payment` → `paid` → `shipped` → `completed`, plus `canc
 - **BookImage**: id, bookId, **baseKey** (object storage key prefix; the three renditions live under it), position, width, height
 - **Order**: id, number (also the variable symbol), publicToken, status, paymentMethod, email, name, phone, shipping details (including pickup-point text), shippingMethod, shippingCostMinor, totalMinor, locale, expiresAt, sellerRemindedAt, trackingNumber, note, createdAt, paidAt
 - **OrderItem**: id, orderId, bookId, titleSnapshot, priceMinorSnapshot
-- **Users and sessions**: managed by Better Auth, with a role field
+- **Users and sessions**: managed by Better Auth, no role field (one admin level)
 - **Settings**: Zásilkovna flat price, pickup instructions
 
 Notes: `reservedByOrderId` is added in M3, together with the orders table and its foreign key; M1 does not create it. `updatedAt` is set on every change to a book. Store money as integers, never floats. Add database indexes on status, reservedUntil, soldAt, genre join, and price. Use database transactions when reserving and marking sold. Full-text search via Postgres. The image base URL is an environment variable.
@@ -239,7 +239,7 @@ This is not legal advice.
 
 Also: privacy policy and cookie rules (GDPR); QR payments need only the seller's account number, no provider onboarding.
 
-## 10. Tech stack and architecture **(v7)**
+## 10. Tech stack and architecture **(v8)**
 
 - **Frontend and app:** Next.js (App Router), TypeScript.
 - **Visual direction (v5):** this is a working prototype first. Shop name is the working title "Lucy's Bookshop", kept in one config value and the messages file, never hard-coded in components, because it will change. Styling is very light and almost brutalist, but accessible: system font stack, high contrast (WCAG AA), visible focus states, large touch targets, no decorative shadows or gradients. All colors, spacing and type sizes are design tokens (CSS custom properties), so a later art direction is mostly a token swap. Art direction is decided after the shop works.
@@ -254,13 +254,13 @@ Also: privacy policy and cookie rules (GDPR); QR payments need only the seller's
 - **Payments:** QR platba (SPAYD) with manual confirmation behind a `PaymentConfirmer` interface
 - **Notifications:** `SellerNotifier` with an email implementation (see 6.8); no buyer email in v1
 - **Images (decided):** Cloudflare R2 (probable), presigned uploads from the browser. Photos are resized **in the browser at upload** into three renditions (about 480px thumb, 960px medium, 1600px large, WebP or JPEG), handling EXIF orientation, and stored under `books/<bookId>/<imageId>/`. The database stores one base key. `next/image` is used with a small custom loader that picks the nearest pre-made rendition, so no Vercel image optimization quota is used and the code works on any host. The server checks each uploaded object (type and size) before attaching it to a book. Not Vercel Blob.
-- **Auth (admin only):** Better Auth with an owner role and a seller role
+- **Auth (admin only):** Better Auth, email and password, sign-up disabled, one admin level, accounts created by script
 - **Internationalization:** a locale-routing library for the App Router (next-intl is the likely choice), Czech with no URL prefix and English later under `/en`. All UI text in `messages/cs.json`. Money and dates formatted with `Intl`. Book titles, authors, and descriptions are not translated; genres and condition labels are translated through keys. `locale` is stored on the order.
 - **Testing (proposed):** Vitest for unit and service tests (same API as Jest), React Testing Library for components, Playwright for a few end-to-end checkout flows and for async Server Components, which unit test runners do not cover well. The reservation race-condition test runs against a real Postgres (Docker locally and in CI), not mocks. Database tests are `*.int.test.ts` files in a separate Vitest project run by `pnpm test:db`, each run using a throwaway database on the existing Postgres; `pnpm test` stays database-free (see decision note 0010).
 - **CI/CD and jobs:** GitHub Actions for lint, typecheck, test, build, and **deploy to Vercel** with a token, **applying pending database migrations to Neon as part of the deploy** (a deploy must never go live ahead of its schema; until this exists, run `pnpm db:migrate` against Neon by hand before merging a PR that adds a migration); plus scheduled workflows for (1) the seller reminder, calling a secret-protected endpoint every hour or so (runs can be delayed slightly), and (2) a periodic database backup.
 - **Hosting:** Vercel Hobby (see 9 for the terms caveat). Avoid Vercel-only features (Blob, Edge Config, Vercel Cron, image optimization).
 
-## 11. Milestones **(v7)**
+## 11. Milestones **(v8)**
 
 Order: the working shop comes first. The transactional core (cart, reservation, checkout, orders) is the riskiest part, so it is built before the read-only catalog refinements (filters, sorts, search).
 
@@ -268,7 +268,7 @@ Each milestone ends with a short written note on the design choices made and why
 
 - **M0 Setup:** repo (public), Next.js, SCSS and CSS Modules, Docker Postgres, CI, CLAUDE.md, linting and formatting, test setup, `docs/decisions/`, locale routing with the Czech messages file, `.env.example` and env-driven config.
 - **M1 Catalog read path:** Drizzle schema (book, genre, book-genre, book-image), database integration test setup, seed data (about 30 invented books covering every status), catalog page reading from the database with visible statuses (reserved badge, sold within 14 days), book detail page with `/books/<id>/<slug>`, redirect and 404 for hidden books. No pagination, filters or add-to-cart yet (the button is a disabled placeholder at most).
-- **M2 Admin:** Better Auth login with two roles, phone-first add/edit book with the browser-side resize and presigned upload pipeline (up to 5 photos, placeholder), status management.
+- **M2 Admin:** Better Auth login (one admin level, two script-created accounts), phone-first add/edit book with the browser-side resize and presigned upload pipeline (up to 5 photos, placeholder), status management.
 - **M3 Cart and reservation:** client cart, server validation, lazy-expiry reservation logic with tests for the race condition.
 - **M4 Checkout and payment:** pickup and Zásilkovna options, order creation, SPAYD QR generation, order page with token, cash on pickup, `PaymentConfirmer` with the manual implementation.
 - **M5 Orders and notifications:** admin order management, "mark paid", "write to buyer", `SellerNotifier`, scheduled seller-reminder workflow, backup workflow. After this milestone the shop works end to end.
@@ -343,3 +343,4 @@ Still open:
 | 2026-10-08 | Database tests in a separate `integration` Vitest project (`pnpm test:db`) with a throwaway database per run (ADR 0010); `reservedByOrderId` waits for M3       |
 | 2026-10-08 | Genre labels live in `messages/cs.json` under `Genres.<key>`; M1 seed is about 30 invented books                                                                |
 | 2026-10-08 | Deploy applies pending migrations to Neon (M7); until then run by hand before merging (the M1 page failed on Vercel: no tables)                                 |
+| 2026-10-08 | Admin has one level, no owner/seller roles; two accounts (developer, seller) created by script, sign-up disabled, session checked in every admin action (M2)    |
