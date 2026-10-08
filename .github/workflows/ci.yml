@@ -12,11 +12,25 @@ jobs:
   check:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     env:
-      # Dummy value: the build only needs the variable to exist.
+      # Points at the Postgres service defined above. Throwaway: it exists only for this run.
       DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/ci
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install pnpm, Node and dependencies
         uses: pnpm/setup@c9883cc79df532ad1a7b81bf9ab944ceb090d65c # v2.0.0
@@ -24,8 +38,28 @@ jobs:
           runtime: node@24
           cache: true
 
+      - run: pnpm db:ping
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      # No database in this job yet. The app only needs a valid URL at startup.
+      # Add a postgres service here when a tested page queries the database.
+      DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/ci
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pnpm, Node and dependencies
+        uses: pnpm/setup@c9883cc79df532ad1a7b81bf9ab944ceb090d65c # v2.0.0
+        with:
+          runtime: node@24
+          cache: true
+
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
