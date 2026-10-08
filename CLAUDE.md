@@ -21,6 +21,7 @@ pnpm lint           # ESLint
 pnpm typecheck      # runs `next typegen` first (route types are generated and git-ignored)
 pnpm test           # Vitest: unit + component tests, no database needed
 pnpm test:watch     # Vitest in watch mode
+pnpm test:db        # Vitest integration tests (*.int.test.ts) on a throwaway database; needs pnpm db:up. CI runs it. Run it when touching schema or queries (pnpm check does not)
 pnpm test:e2e       # Playwright (Chromium). First run: pnpm exec playwright install chromium
 
 pnpm db:up          # start local Postgres (Docker)
@@ -63,7 +64,7 @@ pnpm db:ping        # verify the database connection
 
 ## Testing
 
-- Vitest for unit/service tests, Playwright for a few end-to-end flows. `*.test.ts` = unit (node), `*.test.tsx` = component (jsdom), `e2e/*.spec.ts` = Playwright.
+- Vitest for unit/service tests, Playwright for a few end-to-end flows. `*.test.ts` = unit (node), `*.int.test.ts` = database integration (real Postgres, `pnpm test:db`, ADR 0010), `*.test.tsx` = component (jsdom), `e2e/*.spec.ts` = Playwright.
 - Prefer getByRole queries. Never use fixed sleeps in tests.
 - The reservation race-condition test runs against a real Postgres, not mocks.
 - For risky logic (reservations, totals, SPAYD, access control), write the test cases first and wait for approval before implementing.

@@ -14,6 +14,7 @@ export default defineConfig({
           name: 'unit',
           environment: 'node',
           include: ['src/**/*.test.ts'],
+          exclude: ['src/**/*.int.test.ts'],
         },
       },
       {
@@ -23,6 +24,18 @@ export default defineConfig({
           environment: 'jsdom',
           include: ['src/**/*.test.tsx'],
           setupFiles: ['./vitest.setup.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'integration',
+          environment: 'node',
+          include: ['src/**/*.int.test.ts'],
+          globalSetup: ['./vitest.integration.global-setup.ts'],
+          setupFiles: ['./vitest.integration.setup.ts'],
+          // Files share one database, so they must not run at the same time.
+          fileParallelism: false,
         },
       },
     ],
