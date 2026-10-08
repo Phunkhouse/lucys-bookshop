@@ -257,7 +257,7 @@ Also: privacy policy and cookie rules (GDPR); QR payments need only the seller's
 - **Auth (admin only):** Better Auth with an owner role and a seller role
 - **Internationalization:** a locale-routing library for the App Router (next-intl is the likely choice), Czech with no URL prefix and English later under `/en`. All UI text in `messages/cs.json`. Money and dates formatted with `Intl`. Book titles, authors, and descriptions are not translated; genres and condition labels are translated through keys. `locale` is stored on the order.
 - **Testing (proposed):** Vitest for unit and service tests (same API as Jest), React Testing Library for components, Playwright for a few end-to-end checkout flows and for async Server Components, which unit test runners do not cover well. The reservation race-condition test runs against a real Postgres (Docker locally and in CI), not mocks. Database tests are `*.int.test.ts` files in a separate Vitest project run by `pnpm test:db`, each run using a throwaway database on the existing Postgres; `pnpm test` stays database-free (see decision note 0010).
-- **CI/CD and jobs:** GitHub Actions for lint, typecheck, test, build, and **deploy to Vercel** with a token; plus scheduled workflows for (1) the seller reminder, calling a secret-protected endpoint every hour or so (runs can be delayed slightly), and (2) a periodic database backup.
+- **CI/CD and jobs:** GitHub Actions for lint, typecheck, test, build, and **deploy to Vercel** with a token, **applying pending database migrations to Neon as part of the deploy** (a deploy must never go live ahead of its schema; until this exists, run `pnpm db:migrate` against Neon by hand before merging a PR that adds a migration); plus scheduled workflows for (1) the seller reminder, calling a secret-protected endpoint every hour or so (runs can be delayed slightly), and (2) a periodic database backup.
 - **Hosting:** Vercel Hobby (see 9 for the terms caveat). Avoid Vercel-only features (Blob, Edge Config, Vercel Cron, image optimization).
 
 ## 11. Milestones **(v7)**
@@ -273,7 +273,7 @@ Each milestone ends with a short written note on the design choices made and why
 - **M4 Checkout and payment:** pickup and Zásilkovna options, order creation, SPAYD QR generation, order page with token, cash on pickup, `PaymentConfirmer` with the manual implementation.
 - **M5 Orders and notifications:** admin order management, "mark paid", "write to buyer", `SellerNotifier`, scheduled seller-reminder workflow, backup workflow. After this milestone the shop works end to end.
 - **M6 Filters, sorts, search:** server-side, URL-synced, on top of the working shop. Must be done before launch.
-- **M7 Launch prep:** legal pages for the chosen scenario, hosting terms resolved, SEO, accessibility pass, CI deploy, a real test purchase and payment.
+- **M7 Launch prep:** legal pages for the chosen scenario, hosting terms resolved, SEO, accessibility pass, CI deploy (including the migration step against Neon), a real test purchase and payment.
 - **M8 Handover:** rehearsal (restore the latest backup into a throwaway Neon project, deploy a second Vercel project from CI, run a full checkout against it), then move production to the seller's accounts.
 
 ## 12. Later ideas
@@ -342,3 +342,4 @@ Still open:
 | 2026-10-08 | No automatic cleanup of hidden books; admin gets a status filter and a guarded manual delete (refused if ordered); `updatedAt` added to Book                    |
 | 2026-10-08 | Database tests in a separate `integration` Vitest project (`pnpm test:db`) with a throwaway database per run (ADR 0010); `reservedByOrderId` waits for M3       |
 | 2026-10-08 | Genre labels live in `messages/cs.json` under `Genres.<key>`; M1 seed is about 30 invented books                                                                |
+| 2026-10-08 | Deploy applies pending migrations to Neon (M7); until then run by hand before merging (the M1 page failed on Vercel: no tables)                                 |
