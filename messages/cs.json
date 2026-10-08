@@ -37,6 +37,26 @@
     "condition": {
       "like_new": "Jako nová",
       "used": "Použitá"
+    },
+    "detail": {
+      "back": "Zpět na knihy",
+      "addToCart": "Přidat do košíku",
+      "message": {
+        "available": "Košík bude brzy k dispozici.",
+        "reserved": "Tato kniha je právě rezervovaná pro jiného zákazníka.",
+        "sold": "Tato kniha už byla prodána {date}."
+      },
+      "fields": {
+        "condition": "Stav",
+        "language": "Jazyk",
+        "genres": "Žánry",
+        "isbn": "ISBN"
+      }
     }
+  },
+  "NotFound": {
+    "title": "Stránka nenalezena",
+    "text": "Tuto stránku se nepodařilo najít. Možná už kniha není v nabídce.",
+    "back": "Zpět na knihy"
   }
 }
