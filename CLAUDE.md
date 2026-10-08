@@ -44,6 +44,7 @@ Decision notes: `docs/decisions/`. The repo is public.
 - One concern per branch and PR. Never push to `main`.
 - Keep PRs small. Describe what changed and why in the PR body.
 - Don't add dependencies without saying why in the PR.
+- Prettier runs on staged files in a pre-commit hook (husky + lint-staged). Never use --no-verify
 - Ask before changing the spec's decisions. Propose the change instead.
 - PR titles use Conventional Commits (feat:, fix:, docs:, test:, ci:, build:, style:, refactor:).
 - Open PRs with gh pr create using a Conventional Commits title. Never merge. The developer merges after review.
