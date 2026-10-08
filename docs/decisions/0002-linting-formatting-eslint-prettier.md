@@ -30,3 +30,4 @@ A Husky pre-commit hook runs `lint-staged`, which formats staged files with Pret
 - The pre-commit hook (`.husky/pre-commit`, config in `.lintstagedrc.json`) runs `prettier --write` on staged files. It does not run ESLint, type checks or tests.
 - CI (`.github/workflows/ci.yml`) runs `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build` on pull requests and pushes to `main`. A commit that skipped the hook still has to pass these.
 - Escape hatches for the hook: `git commit --no-verify` for one commit, or `HUSKY=0` in the environment (for example `HUSKY=0 git commit`). Use them when the hook is in the way, not to push unformatted code, since CI will fail on it.
+- The hook is a convenience, not a guarantee. The developer can bypass it (`git commit --no-verify`, `HUSKY=0`), so CI runs `format:check` as the real gate. The agent is instructed never to bypass it (see `CLAUDE.md`).
