@@ -10,3 +10,10 @@ $root-font-size: 16;
 
   @return math.div($px, $root-font-size) * 1rem;
 }
+
+// Applies the styles from this width upwards: @include from(rem(768)) { ... }
+@mixin from($width) {
+  @media (min-width: $width) {
+    @content;
+  }
+}
