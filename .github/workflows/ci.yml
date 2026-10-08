@@ -62,4 +62,5 @@ jobs:
           cache: true
 
       - run: pnpm exec playwright install --with-deps chromium
+        timeout-minutes: 5
       - run: pnpm test:e2e
