@@ -73,7 +73,7 @@ pnpm db:ping        # verify the database connection
 - One concern per branch and PR. Never push to `main`.
 - Keep PRs small. Describe what changed and why in the PR body.
 - Don't add dependencies without saying why in the PR.
-- Prettier runs on staged files in a pre-commit hook (husky + lint-staged). Never use `--no-verify`.
+- Prettier runs on staged files in a pre-commit hook (husky + lint-staged). Claude never bypasses it: no `git commit --no-verify` or `-n`, no `HUSKY=0`. If the hook fails, fix the cause or ask.
 - Ask before changing the spec's decisions. Propose the change instead.
 - PR titles use Conventional Commits (feat:, fix:, docs:, test:, ci:, build:, style:, refactor:).
 - Open PRs with gh pr create using a Conventional Commits title. Never merge. The developer merges after review.
