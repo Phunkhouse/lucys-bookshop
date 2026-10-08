@@ -49,9 +49,23 @@ jobs:
   e2e:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     env:
-      # No database in this job yet. The app only needs a valid URL at startup.
-      # Add a postgres service here when a tested page queries the database.
+      # Throwaway database for this run. The home page queries it, so it gets
+      # the real migrations and the invented seed data before the tests start.
       DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/ci
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -62,6 +76,8 @@ jobs:
           runtime: node@24
           cache: true
 
+      - run: pnpm db:migrate
+      - run: pnpm db:seed
       - run: pnpm exec playwright install --with-deps chromium
         timeout-minutes: 5
       - run: pnpm test:e2e

@@ -4,6 +4,9 @@
   /* Colors (placeholders) */
   --color-bg: #fff;
   --color-text: #000;
+  --color-muted: #4d4d4d;
+  --color-border: #000;
+  --color-focus: #0033cc;
   --color-accent: #0033cc;
   --color-on-accent: #fff;
 
@@ -16,6 +19,10 @@
   --space-6: #{rem(32)};
   --space-7: #{rem(48)};
   --space-8: #{rem(64)};
+
+  /* Lines */
+  --border-width: 2px;
+  --focus-width: 3px;
 
   /* Type scale */
   --font-size-sm: #{rem(14)};

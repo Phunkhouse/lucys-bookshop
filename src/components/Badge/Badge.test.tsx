@@ -7,4 +7,9 @@ describe('Badge', () => {
     render(<Badge>Rezervováno</Badge>)
     expect(screen.getByText('Rezervováno')).toBeDefined()
   })
+
+  it('renders with a tone', () => {
+    render(<Badge tone="sold">Prodáno</Badge>)
+    expect(screen.getByText('Prodáno')).toBeDefined()
+  })
 })

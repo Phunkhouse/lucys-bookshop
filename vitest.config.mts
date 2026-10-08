@@ -24,6 +24,9 @@ export default defineConfig({
           environment: 'jsdom',
           include: ['src/**/*.test.tsx'],
           setupFiles: ['./vitest.setup.ts'],
+          // next-intl imports 'next/navigation' without a file extension, which
+          // Node can't resolve on its own. Let Vitest process the package instead.
+          server: { deps: { inline: ['next-intl'] } },
         },
       },
       {

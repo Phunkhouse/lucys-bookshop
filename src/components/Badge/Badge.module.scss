@@ -1,0 +1,29 @@
+@use 'utilities' as *;
+
+.badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.neutral {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+// Outlined: the book is held for someone, but may come back.
+.reserved {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+// Filled: the book is gone.
+.sold {
+  background: var(--color-text);
+  color: var(--color-bg);
+}

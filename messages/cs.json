@@ -19,5 +19,24 @@
     "children": "Pro děti",
     "poetry": "Poezie",
     "nonfiction": "Naučná literatura"
+  },
+  "Catalog": {
+    "heading": "Nabídka knih",
+    "count": "{count, plural, one {# kniha} few {# knihy} other {# knih}}",
+    "empty": {
+      "title": "Zatím tu nejsou žádné knihy.",
+      "hint": "Zkuste to prosím později, nové knihy přibývají."
+    }
+  },
+  "Book": {
+    "noPhoto": "Fotografie brzy",
+    "status": {
+      "reserved": "Rezervováno",
+      "sold": "Prodáno"
+    },
+    "condition": {
+      "like_new": "Jako nová",
+      "used": "Použitá"
+    }
   }
 }
