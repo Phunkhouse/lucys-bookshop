@@ -9,5 +9,15 @@
   "Nav": {
     "catalog": "Knihy",
     "cart": "Košík"
+  },
+  "Genres": {
+    "novel": "Román",
+    "crime": "Detektivka",
+    "scifi": "Sci-fi",
+    "fantasy": "Fantasy",
+    "history": "Historie",
+    "children": "Pro děti",
+    "poetry": "Poezie",
+    "nonfiction": "Naučná literatura"
   }
 }

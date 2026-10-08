@@ -19,6 +19,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:ping": "tsx scripts/db-ping.ts",
+    "db:seed": "tsx scripts/seed.ts",
     "prepare": "husky"
   },
   "dependencies": {
