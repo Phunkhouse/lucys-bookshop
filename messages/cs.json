@@ -100,6 +100,47 @@
         "reserved": "Mezitím byla kniha rezervována, skrýt ji nejde.",
         "sold": "Kniha je mezitím prodaná, skrýt ji nejde.",
         "notFound": "Tuto knihu se nepodařilo najít."
+      },
+      "add": "Přidat knihu",
+      "edit": "Upravit: {title}",
+      "editShort": "Upravit"
+    },
+    "form": {
+      "newTitle": "Přidat knihu",
+      "editTitle": "Upravit knihu",
+      "back": "Zpět na seznam knih",
+      "requiredNote": "* povinné pole",
+      "fields": {
+        "title": "Název",
+        "author": "Autor",
+        "genres": "Žánry",
+        "language": "Jazyk",
+        "condition": "Stav",
+        "conditionNote": "Poznámka ke stavu",
+        "description": "Popis",
+        "price": "Cena (Kč)",
+        "isbn": "ISBN"
+      },
+      "conditions": {
+        "like_new": "Jako nová",
+        "used": "Použitá"
+      },
+      "save": "Uložit",
+      "saving": "Ukládám…",
+      "errors": {
+        "required": "Vyplňte toto pole.",
+        "tooLong": "Text je příliš dlouhý.",
+        "invalid": "Neplatná hodnota.",
+        "invalidLanguage": "Vyberte jazyk ze seznamu.",
+        "invalidCondition": "Vyberte stav knihy.",
+        "unknownGenre": "Vybraný žánr neexistuje.",
+        "priceInvalid": "Zadejte cenu číslem, například 189 nebo 189,50.",
+        "priceDecimals": "Cena může mít nejvýše dvě desetinná místa.",
+        "pricePositive": "Cena musí být vyšší než 0.",
+        "priceTooHigh": "Cena může být nejvýše 100 000 Kč.",
+        "isbnInvalid": "ISBN není platné. Zkontrolujte číslice.",
+        "notFound": "Tuto knihu se nepodařilo najít.",
+        "saveFailed": "Uložení se nepodařilo. Zkuste to prosím znovu."
       }
     }
   }

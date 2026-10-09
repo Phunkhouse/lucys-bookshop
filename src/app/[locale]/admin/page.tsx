@@ -23,7 +23,12 @@ export default async function AdminHome({
     <main className={css.main}>
       <header className={css.header}>
         <h1>{t('books.heading')}</h1>
-        <SignOutButton />
+        <div className={css.headerActions}>
+          <Link href="/admin/books/new" className={css.add}>
+            {t('books.add')}
+          </Link>
+          <SignOutButton />
+        </div>
       </header>
       <p>{t('signedInAs', { email: actor.email })}</p>
 
