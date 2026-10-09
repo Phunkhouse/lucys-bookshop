@@ -1,0 +1,31 @@
+@use 'utilities' as *;
+
+.toggle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.button {
+  min-height: rem(48);
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.7;
+  }
+
+  &:focus-visible {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+.error {
+  font-weight: 700;
+}
