@@ -32,6 +32,7 @@ pnpm db:ping        # verify the database connection
 pnpm admin:create   # create an admin account (needs only DATABASE_URL; asks for the password; sign-up is disabled)
 ```
 
+- Creating admin logins, locally and on Neon: `docs/admin-accounts.md`.
 - Use only scripts that exist in `package.json`. Check it before inventing a command.
 - Ask before `docker compose down -v` (it deletes all local database data).
 - Never use `drizzle-kit push`. Schema changes go through `db:generate` and `db:migrate`.
