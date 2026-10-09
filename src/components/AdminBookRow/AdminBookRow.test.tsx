@@ -4,7 +4,10 @@ import { renderWithIntl } from '@/lib/render-with-intl'
 import type { AdminBookItem } from '@/server/admin/book-list'
 import { AdminBookRow } from './AdminBookRow'
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
+vi.mock('next/navigation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/navigation')>()),
+  useRouter: () => ({ refresh: vi.fn() }),
+}))
 
 const now = new Date('2026-10-09T12:00:00.000Z')
 
@@ -62,6 +65,15 @@ describe('AdminBookRow', () => {
     render({ status })
 
     expect(screen.getByText(label)).toBeTruthy()
+  })
+
+  it('links to the edit page of this book', () => {
+    render()
+
+    const link = screen.getByRole('link', {
+      name: 'Upravit: Stíny nad Vltavou',
+    })
+    expect(link.getAttribute('href')).toBe(`/admin/books/${book.id}/edit`)
   })
 
   it('offers the hide button only where it applies', () => {

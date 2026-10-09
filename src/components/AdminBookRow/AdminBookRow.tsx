@@ -2,6 +2,7 @@ import { useFormatter, useTranslations } from 'next-intl'
 import { Badge } from '@/components/Badge'
 import { BookStatusToggle } from '@/components/BookStatusToggle'
 import { ChangedAgo } from '@/components/ChangedAgo'
+import { Link } from '@/i18n/navigation'
 import type { AdminBookItem } from '@/server/admin/book-list'
 import type { SetHiddenResult } from '@/server/admin/book-status'
 import css from './AdminBookRow.module.scss'
@@ -46,7 +47,17 @@ export function AdminBookRow({ book, now, setHidden }: AdminBookRowProps) {
           <ChangedAgo date={book.updatedAt} now={now} />
         </p>
       </div>
-      <BookStatusToggle status={book.status} setHidden={setHidden} />
+      <div className={css.actions}>
+        {/* The visible word starts the accessible name, so the title tells links apart. */}
+        <Link
+          href={`/admin/books/${book.id}/edit`}
+          className={css.edit}
+          aria-label={t('edit', { title: book.title })}
+        >
+          {t('editShort')}
+        </Link>
+        <BookStatusToggle status={book.status} setHidden={setHidden} />
+      </div>
     </article>
   )
 }
