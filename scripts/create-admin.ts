@@ -1,8 +1,8 @@
 import 'dotenv/config' // must stay first: loads .env before anything reads the env
+import { randomBytes } from 'node:crypto'
 import { createInterface } from 'node:readline/promises'
 import { Writable } from 'node:stream'
 import { z } from 'zod'
-import { env } from '../src/config/env'
 import { createAdmin } from '../src/server/auth/create-admin'
 import { createAuth } from '../src/server/auth/create-auth'
 import { db, pool } from '../src/server/db/client'
@@ -51,10 +51,12 @@ async function main() {
     return
   }
 
+  // Needs only DATABASE_URL. This script issues no sessions, so the secret and
+  // URL below are never used for anything that is stored or sent.
   const auth = createAuth({
     db,
-    secret: env.BETTER_AUTH_SECRET,
-    baseUrl: env.BETTER_AUTH_URL,
+    secret: randomBytes(32).toString('base64'),
+    baseUrl: 'http://localhost:3000',
   })
   const created = await createAdmin(auth, { name, email, password })
   console.log(`Created admin ${created.email}`)
