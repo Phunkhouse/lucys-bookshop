@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, lt, or, type SQL } from 'drizzle-orm'
+import { and, eq, gt, gte, inArray, lt, or, type SQL } from 'drizzle-orm'
 import { SOLD_VISIBLE_MS } from './availability'
 import { books } from './db/schema'
 
@@ -12,6 +12,11 @@ export function isAvailableSql(now: Date): SQL {
     eq(books.status, 'available'),
     and(eq(books.status, 'reserved'), lt(books.reservedUntil, now)),
   )!
+}
+
+// Reserved and the deadline has not passed. At exactly the deadline it is still reserved.
+export function isReservedSql(now: Date): SQL {
+  return and(eq(books.status, 'reserved'), gte(books.reservedUntil, now))!
 }
 
 // Shown in the catalog (spec 6.1): available or reserved, plus books sold less

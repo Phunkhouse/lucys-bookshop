@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { isAvailableSql, isListedSql } from './availability-sql'
-import { isBuyable, isListedInCatalog } from './availability'
+import { isAvailableSql, isListedSql, isReservedSql } from './availability-sql'
+import { displayStatus, isBuyable, isListedInCatalog } from './availability'
 import { db } from './db/client'
 import { books } from './db/schema'
 import { createBook, resetDatabase } from './db/test-helpers'
@@ -58,7 +58,7 @@ const cases: [string, Partial<typeof books.$inferInsert>][] = [
 beforeEach(resetDatabase)
 
 describe('SQL availability rules match the TypeScript rules', () => {
-  it('agrees with isListedInCatalog and isBuyable for every case', async () => {
+  it('agrees with isListedInCatalog, isBuyable and displayStatus for every case', async () => {
     for (const [, fields] of cases) await createBook(fields)
     const all = await db.select().from(books)
     expect(all).toHaveLength(cases.length)
@@ -74,7 +74,17 @@ describe('SQL availability rules match the TypeScript rules', () => {
       ).map((r) => r.id),
     )
 
+    const reservedInSql = new Set(
+      (
+        await db.select({ id: books.id }).from(books).where(isReservedSql(now))
+      ).map((r) => r.id),
+    )
+
     for (const book of all) {
+      expect(
+        reservedInSql.has(book.id),
+        `reserved: ${book.status} ${book.title}`,
+      ).toBe(displayStatus(book, now) === 'reserved')
       expect(
         listedInSql.has(book.id),
         `listed: ${book.status} ${book.title}`,

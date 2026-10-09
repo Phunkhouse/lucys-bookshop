@@ -74,6 +74,33 @@
   "Admin": {
     "heading": "Správa",
     "signedInAs": "Přihlášen: {email}",
-    "signOut": "Odhlásit se"
+    "signOut": "Odhlásit se",
+    "books": {
+      "heading": "Knihy",
+      "filterLabel": "Filtr podle stavu",
+      "filters": {
+        "all": "Vše",
+        "available": "Dostupné",
+        "reserved": "Rezervované",
+        "sold": "Prodané",
+        "hidden": "Skryté"
+      },
+      "status": {
+        "available": "Dostupná",
+        "reserved": "Rezervovaná",
+        "sold": "Prodaná",
+        "hidden": "Skrytá"
+      },
+      "changed": "Změněno {when}",
+      "noPhotos": "Bez fotek",
+      "hide": "Skrýt",
+      "unhide": "Zobrazit",
+      "empty": "V tomto filtru nejsou žádné knihy.",
+      "errors": {
+        "reserved": "Mezitím byla kniha rezervována, skrýt ji nejde.",
+        "sold": "Kniha je mezitím prodaná, skrýt ji nejde.",
+        "notFound": "Tuto knihu se nepodařilo najít."
+      }
+    }
   }
 }

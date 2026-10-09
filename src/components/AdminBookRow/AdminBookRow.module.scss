@@ -1,0 +1,40 @@
+@use 'utilities' as *;
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.main {
+  display: flex;
+  flex: 1 1 rem(240);
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  line-height: 1.25;
+}
+
+.price {
+  font-weight: 700;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.changed {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
