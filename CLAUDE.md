@@ -7,7 +7,7 @@ Decision notes: `docs/decisions/`. The repo is public.
 
 ## Commands
 
-First-time setup: `pnpm install`, `cp .env.example .env` (set the password), `pnpm db:up`.
+First-time setup: `pnpm install`, `cp .env.example .env` (set the password and `BETTER_AUTH_SECRET`), `pnpm db:up`, `pnpm db:migrate`, then `pnpm admin:create <email> <name>` for your admin login.
 
 ```sh
 pnpm dev            # Next dev server on http://localhost:3000
@@ -29,6 +29,7 @@ pnpm db:down        # stop it, data is kept
 pnpm db:generate    # generate a migration from schema changes
 pnpm db:migrate     # apply migrations
 pnpm db:ping        # verify the database connection
+pnpm admin:create   # create an admin account (asks for the password; sign-up is disabled)
 ```
 
 - Use only scripts that exist in `package.json`. Check it before inventing a command.

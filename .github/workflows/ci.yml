@@ -29,6 +29,9 @@ jobs:
     env:
       # Points at the Postgres service defined above. Throwaway: it exists only for this run.
       DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/ci
+      # Throwaway values for this run only; they protect nothing.
+      BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      BETTER_AUTH_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -67,6 +70,9 @@ jobs:
       # Throwaway database for this run. The home page queries it, so it gets
       # the real migrations. Playwright seeds the invented data itself (e2e/global-setup.ts).
       DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/ci
+      # Throwaway values for this run only; they protect nothing.
+      BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      BETTER_AUTH_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
