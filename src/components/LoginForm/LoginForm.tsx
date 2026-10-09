@@ -19,7 +19,7 @@ export function LoginForm({ next }: LoginFormProps) {
   const [error, setError] = useState<ErrorKey | null>(null)
   const [pending, setPending] = useState(false)
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     setPending(true)
@@ -42,8 +42,10 @@ export function LoginForm({ next }: LoginFormProps) {
     }
   }
 
+  // method="post": if the script fails to load, the browser must never put the
+  // password in the URL.
   return (
-    <form className={css.form} onSubmit={onSubmit}>
+    <form className={css.form} method="post" onSubmit={onSubmit}>
       <div className={css.field}>
         <label htmlFor="login-email">{t('email')}</label>
         <input

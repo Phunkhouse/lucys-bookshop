@@ -39,6 +39,12 @@ describe('LoginForm', () => {
     expect(screen.getByRole('button', { name: 'Přihlásit se' })).toBeTruthy()
   })
 
+  it('posts the form, so credentials never reach the URL if JavaScript fails to load', () => {
+    const { container } = renderWithIntl(<LoginForm next="/admin" />)
+
+    expect(container.querySelector('form')?.getAttribute('method')).toBe('post')
+  })
+
   it('signs in and goes to the requested page', async () => {
     signInEmail.mockResolvedValue({ data: {}, error: null })
     renderWithIntl(<LoginForm next="/admin/books" />)
