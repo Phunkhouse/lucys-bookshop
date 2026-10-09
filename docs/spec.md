@@ -1,6 +1,6 @@
-# Used Books E-shop: Spec v8
+# Used Books E-shop: Spec v9
 
-Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04) and the M1 and M2 planning rounds (2026-10-08) are merged in. Sections that changed from v7 are marked **(v8)**; v7 marks are kept as history; earlier version marks are kept as history. Remaining open items are in section 13.
+Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04) and the M1 and M2 planning rounds (2026-10-08) are merged in. Sections that changed from v8 are marked **(v9)**; v8 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
 
 ## 1. Purpose **(v4)**
 
@@ -171,7 +171,7 @@ Statuses: `pending_payment` → `paid` → `shipped` → `completed`, plus `canc
 - **Delivered by email to the seller's own address (v5)** through a `SellerNotifier` interface. The planned implementation uses a free provider's sandbox sender, which can deliver only to the email of the provider account owner, so the production provider account must be registered with her address (during development, notifications go to the developer's own address). To verify in a short spike at M5: reliability of the sandbox sender, spam-folder behavior, and a fallback (a single verified sender address on another free provider). A Telegram bot stays an option behind the same interface.
 - **Buyers receive no emails in v1.** An `EmailSender` interface is added later together with a custom domain and a verified sending domain.
 
-### 6.9 Admin area **(v8)**
+### 6.9 Admin area **(v9)**
 
 **Essential. Without it the seller can't run the shop.** Built as part of the app, not as a CMS, because the admin is the business logic (reservations, orders, payments).
 
@@ -181,7 +181,7 @@ Statuses: `pending_payment` → `paid` → `shipped` → `completed`, plus `canc
 - **Phone-first listing flow:** camera input for photos, resize in the browser, upload straight to object storage with a presigned URL, minimal required fields.
 - Nice to have: ISBN lookup to prefill title/author/cover (Open Library or Google Books API).
 - Responsive for both phone and desktop.
-- Book list with status (available, reserved, sold, hidden), quick toggle to hide, and a status filter (including a "Hidden" view). Each book shows how long it has been in its current state (from `updatedAt`).
+- Book list with status (available, reserved, sold, hidden), quick toggle to hide, and a status filter (including a "Hidden" view). Each book shows when it was last changed (from `updatedAt`, so any edit counts, not only a status change). The toggle appears only on available books (to hide) and hidden books (to show again). A reserved book leaves that state by expiry or by cancelling its order, and a sold book stays sold, so neither can be hidden; if a buyer reserves a book while the seller's page is stale, the toggle is refused with a message.
 - **Deleting a book is manual and guarded:** there is no automatic cleanup of hidden books. Delete asks for confirmation, is refused if any order references the book, and also removes the book's photos from object storage. Books that were ever ordered stay as `hidden` or `sold`; sold books are never cleaned up, because their detail page must keep working for shared links. If hidden books pile up, a "stale hidden" flag in the list (for example hidden for more than 90 days) can be added later; it flags only and never deletes.
 - Orders list and detail: status changes, "mark paid", extend reservation, expiring-soon flag, notes, "write to buyer".
 - Settings: Zásilkovna flat price, pickup instructions.
@@ -312,35 +312,36 @@ Still open:
 
 ## 14. Decisions log
 
-| Date       | Decision                                                                                                                                                        |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-10-02 | Payment by QR bank transfer to Raiffeisenbank, manual confirmation; CSV import or bank API deferred                                                             |
-| 2026-10-02 | Reservation 48h, lazy expiry, silent relist, no buyer reminder in v1                                                                                            |
-| 2026-10-02 | Seller gets a reminder about 24h after checkout for unpaid orders                                                                                               |
-| 2026-10-02 | Modular monolith in Next.js with a framework-free service layer                                                                                                 |
-| 2026-10-02 | Neon free plan for Postgres (assumed), Drizzle as ORM (confirmed)                                                                                               |
-| 2026-10-02 | GitHub Actions for CI, deploy, and scheduled jobs                                                                                                               |
-| 2026-10-02 | Develop on Vercel Hobby, keep portable, images probably on Cloudflare R2                                                                                        |
-| 2026-10-02 | Czech UI for v1, prepared for English                                                                                                                           |
-| 2026-10-02 | Better Auth for admin (Auth.js is in maintenance mode); two users, owner and seller; custom admin, no CMS                                                       |
-| 2026-10-02 | Sold books visible 14 days, reserved books with badge                                                                                                           |
-| 2026-10-02 | Two condition grades (`like_new`, `used`) plus optional note                                                                                                    |
-| 2026-10-02 | Shipping: personal pickup (cash on pickup possible) and manual Zásilkovna with a fixed flat price; Czech Republic only                                          |
-| 2026-10-02 | Develop on developer's accounts, production on seller's accounts after testing; single public repo, GitHub Actions deploy with a token from her Vercel account  |
-| 2026-10-02 | No custom domain for now; no buyer emails in v1; seller notified via `SellerNotifier`; order page with token                                                    |
-| 2026-10-04 | One Book row per copy in v1, with a documented path to a Title/Copy split later                                                                                 |
-| 2026-10-04 | URL `/books/<id>/<slug>`: random short id is the key, slug computed from the title, redirect to canonical                                                       |
-| 2026-10-04 | Up to 5 photos per book, placeholder when none, editable after upload; resize in the browser into three renditions, served through a custom `next/image` loader |
-| 2026-10-04 | Developer writes only setup; Claude writes code in small PRs; developer reviews with CI as the first gate; ADR note per milestone                               |
-| 2026-10-04 | CSS Modules with SCSS, no Tailwind, no component library for now                                                                                                |
-| 2026-10-04 | AI features are after v1, nothing reserved in the architecture                                                                                                  |
-| 2026-10-04 | Seller notified by email to her own address via `SellerNotifier`; only the seller can extend a cash-on-pickup reservation                                       |
-| 2026-10-04 | Legal status (trader vs private seller) deferred until before launch                                                                                            |
-| 2026-10-04 | Milestones reordered: admin, cart, checkout and orders come before filters, sorts and search (now M6)                                                           |
-| 2026-10-04 | Working title "Lucy's Bookshop"; working prototype first with very light, almost brutalist but accessible styling; art direction later                          |
-| 2026-10-08 | Catalog pagination deferred to M6; hidden books return 404 on the detail page                                                                                   |
-| 2026-10-08 | No automatic cleanup of hidden books; admin gets a status filter and a guarded manual delete (refused if ordered); `updatedAt` added to Book                    |
-| 2026-10-08 | Database tests in a separate `integration` Vitest project (`pnpm test:db`) with a throwaway database per run (ADR 0010); `reservedByOrderId` waits for M3       |
-| 2026-10-08 | Genre labels live in `messages/cs.json` under `Genres.<key>`; M1 seed is about 30 invented books                                                                |
-| 2026-10-08 | Deploy applies pending migrations to Neon (M7); until then run by hand before merging (the M1 page failed on Vercel: no tables)                                 |
-| 2026-10-08 | Admin has one level, no owner/seller roles; two accounts (developer, seller) created by script, sign-up disabled, session checked in every admin action (M2)    |
+| Date       | Decision                                                                                                                                                                                                                           |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-02 | Payment by QR bank transfer to Raiffeisenbank, manual confirmation; CSV import or bank API deferred                                                                                                                                |
+| 2026-10-02 | Reservation 48h, lazy expiry, silent relist, no buyer reminder in v1                                                                                                                                                               |
+| 2026-10-02 | Seller gets a reminder about 24h after checkout for unpaid orders                                                                                                                                                                  |
+| 2026-10-02 | Modular monolith in Next.js with a framework-free service layer                                                                                                                                                                    |
+| 2026-10-02 | Neon free plan for Postgres (assumed), Drizzle as ORM (confirmed)                                                                                                                                                                  |
+| 2026-10-02 | GitHub Actions for CI, deploy, and scheduled jobs                                                                                                                                                                                  |
+| 2026-10-02 | Develop on Vercel Hobby, keep portable, images probably on Cloudflare R2                                                                                                                                                           |
+| 2026-10-02 | Czech UI for v1, prepared for English                                                                                                                                                                                              |
+| 2026-10-02 | Better Auth for admin (Auth.js is in maintenance mode); two users, owner and seller; custom admin, no CMS                                                                                                                          |
+| 2026-10-02 | Sold books visible 14 days, reserved books with badge                                                                                                                                                                              |
+| 2026-10-02 | Two condition grades (`like_new`, `used`) plus optional note                                                                                                                                                                       |
+| 2026-10-02 | Shipping: personal pickup (cash on pickup possible) and manual Zásilkovna with a fixed flat price; Czech Republic only                                                                                                             |
+| 2026-10-02 | Develop on developer's accounts, production on seller's accounts after testing; single public repo, GitHub Actions deploy with a token from her Vercel account                                                                     |
+| 2026-10-02 | No custom domain for now; no buyer emails in v1; seller notified via `SellerNotifier`; order page with token                                                                                                                       |
+| 2026-10-04 | One Book row per copy in v1, with a documented path to a Title/Copy split later                                                                                                                                                    |
+| 2026-10-04 | URL `/books/<id>/<slug>`: random short id is the key, slug computed from the title, redirect to canonical                                                                                                                          |
+| 2026-10-04 | Up to 5 photos per book, placeholder when none, editable after upload; resize in the browser into three renditions, served through a custom `next/image` loader                                                                    |
+| 2026-10-04 | Developer writes only setup; Claude writes code in small PRs; developer reviews with CI as the first gate; ADR note per milestone                                                                                                  |
+| 2026-10-04 | CSS Modules with SCSS, no Tailwind, no component library for now                                                                                                                                                                   |
+| 2026-10-04 | AI features are after v1, nothing reserved in the architecture                                                                                                                                                                     |
+| 2026-10-04 | Seller notified by email to her own address via `SellerNotifier`; only the seller can extend a cash-on-pickup reservation                                                                                                          |
+| 2026-10-04 | Legal status (trader vs private seller) deferred until before launch                                                                                                                                                               |
+| 2026-10-04 | Milestones reordered: admin, cart, checkout and orders come before filters, sorts and search (now M6)                                                                                                                              |
+| 2026-10-04 | Working title "Lucy's Bookshop"; working prototype first with very light, almost brutalist but accessible styling; art direction later                                                                                             |
+| 2026-10-08 | Catalog pagination deferred to M6; hidden books return 404 on the detail page                                                                                                                                                      |
+| 2026-10-08 | No automatic cleanup of hidden books; admin gets a status filter and a guarded manual delete (refused if ordered); `updatedAt` added to Book                                                                                       |
+| 2026-10-08 | Database tests in a separate `integration` Vitest project (`pnpm test:db`) with a throwaway database per run (ADR 0010); `reservedByOrderId` waits for M3                                                                          |
+| 2026-10-08 | Genre labels live in `messages/cs.json` under `Genres.<key>`; M1 seed is about 30 invented books                                                                                                                                   |
+| 2026-10-08 | Deploy applies pending migrations to Neon (M7); until then run by hand before merging (the M1 page failed on Vercel: no tables)                                                                                                    |
+| 2026-10-08 | Admin has one level, no owner/seller roles; two accounts (developer, seller) created by script, sign-up disabled, session checked in every admin action (M2)                                                                       |
+| 2026-10-09 | Admin list shows "last changed" (from `updatedAt`), not time in status; an exact `statusChangedAt` waits for the stale-hidden flag. Hide works only on available books, show only on hidden ones; reserved and sold have no toggle |
