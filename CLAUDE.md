@@ -29,7 +29,7 @@ pnpm db:down        # stop it, data is kept
 pnpm db:generate    # generate a migration from schema changes
 pnpm db:migrate     # apply migrations
 pnpm db:ping        # verify the database connection
-pnpm admin:create   # create an admin account (asks for the password; sign-up is disabled)
+pnpm admin:create   # create an admin account (needs only DATABASE_URL; asks for the password; sign-up is disabled)
 ```
 
 - Use only scripts that exist in `package.json`. Check it before inventing a command.
