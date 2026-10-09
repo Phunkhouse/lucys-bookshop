@@ -2,10 +2,11 @@ import { sql } from 'drizzle-orm'
 import { db } from './client'
 import { bookGenres, bookImages, books, genres } from './schema'
 
-// Empties every table between integration tests. Cascade covers the join tables.
+// Empties every table between integration tests. Cascade covers the join tables
+// and the auth tables that reference the user.
 export async function resetDatabase() {
   await db.execute(
-    sql`TRUNCATE TABLE books, genres, book_genres, book_images RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE books, genres, book_genres, book_images, "user", session, account, verification, rate_limit RESTART IDENTITY CASCADE`,
   )
 }
 

@@ -117,3 +117,5 @@ export const bookImages = pgTable(
     check('book_images_size_positive', sql`${t.width} > 0 AND ${t.height} > 0`),
   ],
 )
+
+export * from './auth-schema'

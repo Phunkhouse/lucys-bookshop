@@ -58,5 +58,22 @@
     "title": "Stránka nenalezena",
     "text": "Tuto stránku se nepodařilo najít. Možná už kniha není v nabídce.",
     "back": "Zpět na knihy"
+  },
+  "Login": {
+    "title": "Přihlášení",
+    "email": "E-mail",
+    "password": "Heslo",
+    "submit": "Přihlásit se",
+    "submitting": "Přihlašuji…",
+    "errors": {
+      "invalid": "Nesprávný e-mail nebo heslo.",
+      "tooMany": "Příliš mnoho pokusů. Zkuste to znovu za několik minut.",
+      "generic": "Přihlášení se nepodařilo. Zkuste to prosím znovu."
+    }
+  },
+  "Admin": {
+    "heading": "Správa",
+    "signedInAs": "Přihlášen: {email}",
+    "signOut": "Odhlásit se"
   }
 }
