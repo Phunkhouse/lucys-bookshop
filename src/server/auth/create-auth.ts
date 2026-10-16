@@ -13,6 +13,8 @@ type CreateAuthOptions = {
   baseUrl: string
   // The app adds plugins that need Next (cookie handling); this file stays free of it.
   plugins?: BetterAuthPlugin[]
+  // Origins to trust besides baseUrl. Development only (see lan-origin.ts).
+  trustedOrigins?: (request?: Request) => string[] | Promise<string[]>
 }
 
 // Email and password only. Sign-up is off: accounts are created by
@@ -23,6 +25,7 @@ export function createAuth({
   secret,
   baseUrl,
   plugins,
+  trustedOrigins,
 }: CreateAuthOptions) {
   return betterAuth({
     baseURL: baseUrl,
@@ -49,6 +52,12 @@ export function createAuth({
         // 5 attempts per address per 15 minutes
         '/sign-in/email': { window: 15 * 60, max: 5 },
       },
+    },
+    trustedOrigins,
+    advanced: {
+      // Better Auth skips the origin check when NODE_ENV is "test". Switching it
+      // on explicitly makes tests see what production does (where it is on).
+      disableOriginCheck: false,
     },
     plugins,
   })

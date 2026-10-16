@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { env } from '@/config/env'
 import { UnauthorizedError } from '@/server/auth/errors'
 import { createAuth } from '@/server/auth/create-auth'
+import { trustedOriginsFor } from '@/server/auth/lan-origin'
 import {
   createRequireAdmin,
   type AdminActor,
@@ -14,6 +15,8 @@ export const auth = createAuth({
   db,
   secret: env.BETTER_AUTH_SECRET,
   baseUrl: env.BETTER_AUTH_URL,
+  // Home-network origins for phone testing, in `pnpm dev` only.
+  trustedOrigins: trustedOriginsFor(process.env.NODE_ENV),
   plugins: [nextCookies()], // keep last
 })
 

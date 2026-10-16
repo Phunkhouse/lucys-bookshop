@@ -5,6 +5,7 @@ import { resetDatabase } from '@/server/db/test-helpers'
 import { account, session, user } from '@/server/db/schema'
 import { createAdmin } from './create-admin'
 import { createAuth } from './create-auth'
+import { trustedOriginsFor } from './lan-origin'
 
 const BASE_URL = 'http://localhost:3000'
 const SECRET = 'test-secret-test-secret-test-secret-1234'
@@ -249,5 +250,58 @@ describe('login rate limit', () => {
     const otherInstance = makeAuth()
     const blocked = await signIn(otherInstance, EMAIL, PASSWORD, '198.51.100.9')
     expect(blocked.status).toBe(429)
+  })
+})
+
+// Testing from a phone: its origin is the Mac's home-network address. That is
+// trusted in development only, and only for a strict 192.168.x.y address.
+describe('trusted origins', () => {
+  const lanOrigin = 'http://192.168.68.54:3000'
+  const developmentAuth = () =>
+    createAuth({
+      db,
+      secret: SECRET,
+      baseUrl: BASE_URL,
+      trustedOrigins: trustedOriginsFor('development'),
+    })
+  const signInFrom = (auth: Auth, origin: string) =>
+    post(
+      auth,
+      '/sign-in/email',
+      { email: EMAIL, password: PASSWORD },
+      { origin },
+    )
+
+  beforeEach(async () => {
+    await createAdmin(auth, { name: 'Lucy', email: EMAIL, password: PASSWORD })
+  })
+
+  it('signs in from a home-network address in development, and the base URL still works', async () => {
+    expect((await signInFrom(developmentAuth(), lanOrigin)).status).toBe(200)
+    expect((await signInFrom(developmentAuth(), BASE_URL)).status).toBe(200)
+  })
+
+  it('refuses the same address with the production setting', async () => {
+    const production = createAuth({
+      db,
+      secret: SECRET,
+      baseUrl: BASE_URL,
+      trustedOrigins: trustedOriginsFor('production'),
+    })
+
+    expect((await signInFrom(production, lanOrigin)).status).toBe(403)
+    expect((await signInFrom(auth, lanOrigin)).status).toBe(403)
+  })
+
+  it('still refuses lookalikes and other sites in development', async () => {
+    for (const origin of [
+      'http://192.168.68.54.evil.example:3000',
+      'http://evil.example',
+      'http://10.0.0.5:3000',
+    ]) {
+      expect((await signInFrom(developmentAuth(), origin)).status).toBe(403)
+    }
+    // Refused requests create no session.
+    expect(await db.select().from(session)).toHaveLength(0)
   })
 })
