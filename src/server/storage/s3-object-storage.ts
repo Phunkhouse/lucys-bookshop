@@ -24,22 +24,25 @@ export class S3ObjectStorage implements ObjectStorage {
   private client: S3Client
   private bucket: string
 
-  constructor(config: S3StorageConfig) {
+  // `client` is for tests, which stand in for the server.
+  constructor(config: S3StorageConfig, client?: S3Client) {
     this.bucket = config.bucket
-    this.client = new S3Client({
-      endpoint: config.endpoint,
-      region: config.region,
-      forcePathStyle: config.forcePathStyle,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-      },
-      // Recent SDKs add checksum headers to every request by default. R2 and
-      // MinIO do not need them, and a presigned URL would then carry a checksum
-      // the browser cannot produce.
-      requestChecksumCalculation: 'WHEN_REQUIRED',
-      responseChecksumValidation: 'WHEN_REQUIRED',
-    })
+    this.client =
+      client ??
+      new S3Client({
+        endpoint: config.endpoint,
+        region: config.region,
+        forcePathStyle: config.forcePathStyle,
+        credentials: {
+          accessKeyId: config.accessKeyId,
+          secretAccessKey: config.secretAccessKey,
+        },
+        // Recent SDKs add checksum headers to every request by default. R2 and
+        // MinIO do not need them, and a presigned URL would then carry a checksum
+        // the browser cannot produce.
+        requestChecksumCalculation: 'WHEN_REQUIRED',
+        responseChecksumValidation: 'WHEN_REQUIRED',
+      })
   }
 
   presignPut(input: {
@@ -102,9 +105,12 @@ export class S3ObjectStorage implements ObjectStorage {
   }
 
   async deleteMany(keys: string[]) {
-    // At most 1000 keys per request.
+    const failures: { key?: string; code?: string }[] = []
+
+    // At most 1000 keys per request. Every batch is tried, so one failure does
+    // not leave the rest undeleted.
     for (let i = 0; i < keys.length; i += 1000) {
-      await this.client.send(
+      const result = await this.client.send(
         new DeleteObjectsCommand({
           Bucket: this.bucket,
           Delete: {
@@ -112,6 +118,20 @@ export class S3ObjectStorage implements ObjectStorage {
             Quiet: true,
           },
         }),
+      )
+      // A request that succeeds can still list files that were not deleted
+      // (quiet mode reports only these). A file that was already gone is fine.
+      for (const error of result.Errors ?? []) {
+        if (error.Code !== 'NoSuchKey') {
+          failures.push({ key: error.Key, code: error.Code })
+        }
+      }
+    }
+
+    if (failures.length > 0) {
+      const codes = [...new Set(failures.map((f) => f.code ?? 'unknown'))]
+      throw new Error(
+        `Could not delete ${failures.length} of ${keys.length} files (${codes.join(', ')})`,
       )
     }
   }
