@@ -10,6 +10,7 @@ export class FakeObjectStorage implements ObjectStorage {
   >()
   private copiesLeft: number | null = null
   private deletesFail = false
+  private readsFail = false
   private beforeCopy: (() => void) | null = null
 
   // Every URL handed out, so tests can check what was signed.
@@ -32,6 +33,12 @@ export class FakeObjectStorage implements ObjectStorage {
 
   failDeletes() {
     this.deletesFail = true
+  }
+
+  // Test helper: from now on every read (head and range) throws, as a transient
+  // storage failure would.
+  failReads() {
+    this.readsFail = true
   }
 
   // Test helper: runs once, right before the next copy. Lets a test change a
@@ -62,6 +69,7 @@ export class FakeObjectStorage implements ObjectStorage {
   }
 
   async head(key: string) {
+    if (this.readsFail) throw new Error('Read failed (simulated)')
     const object = this.objects.get(key)
     return object
       ? { size: object.bytes.length, contentType: object.contentType }
@@ -69,6 +77,7 @@ export class FakeObjectStorage implements ObjectStorage {
   }
 
   async readRange(key: string, start: number, end: number) {
+    if (this.readsFail) throw new Error('Read failed (simulated)')
     const object = this.objects.get(key)
     if (!object) throw new Error(`No such key: ${key}`)
     return object.bytes.slice(start, end + 1)

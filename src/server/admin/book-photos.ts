@@ -101,13 +101,21 @@ export type CopyPhotosResult =
 // so what is checked here is exactly what the shop will serve. The size stored
 // for a photo is the size of the copied file.
 //
-// If a copy fails, the ones already made are removed and the error is thrown. If
-// a copy fails the check, they are removed and the save is refused.
+// Anything that goes wrong after the first copy removes every copy made for
+// this save: nothing points at them, and the expiry rule covers only uploads/.
+// That includes a storage error while checking the copies (it is rethrown) and
+// a copy that fails the check (the save is refused).
 export async function copyNewPhotos(
   storage: ObjectStorage,
   plan: PlannedPhoto[],
 ): Promise<CopyPhotosResult> {
   const added = plan.filter((p) => p.kind === 'new')
+  const discard = () =>
+    removeImages(
+      storage,
+      added.map((p) => p.photo.baseKey),
+    )
+
   try {
     for (const planned of added) {
       for (const rendition of RENDITIONS) {
@@ -117,39 +125,33 @@ export async function copyNewPhotos(
         )
       }
     }
-  } catch (error) {
-    // The photo being copied when it failed may be partly there too.
-    await removeImages(
-      storage,
-      added.map((p) => p.photo.baseKey),
-    )
-    throw error
-  }
 
-  const sizes = new Map<string, { width: number; height: number }>()
-  for (const planned of added) {
-    const checked = await verifyFinalPhoto(storage, planned.photo.baseKey)
-    if (!checked.ok) {
-      await removeImages(
-        storage,
-        added.map((p) => p.photo.baseKey),
-      )
-      return { ok: false, error: 'photoInvalid' }
+    const sizes = new Map<string, { width: number; height: number }>()
+    for (const planned of added) {
+      const checked = await verifyFinalPhoto(storage, planned.photo.baseKey)
+      if (!checked.ok) {
+        await discard()
+        return { ok: false, error: 'photoInvalid' }
+      }
+      sizes.set(planned.photo.id, {
+        width: checked.width,
+        height: checked.height,
+      })
     }
-    sizes.set(planned.photo.id, {
-      width: checked.width,
-      height: checked.height,
-    })
-  }
 
-  return {
-    ok: true,
-    plan: plan.map((planned) => {
-      const size = sizes.get(planned.photo.id)
-      return planned.kind === 'new' && size
-        ? { ...planned, photo: { ...planned.photo, ...size } }
-        : planned
-    }),
+    return {
+      ok: true,
+      plan: plan.map((planned) => {
+        const size = sizes.get(planned.photo.id)
+        return planned.kind === 'new' && size
+          ? { ...planned, photo: { ...planned.photo, ...size } }
+          : planned
+      }),
+    }
+  } catch (error) {
+    // The photo being copied or checked when it failed may be partly there too.
+    await discard()
+    throw error
   }
 }
 

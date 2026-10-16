@@ -533,6 +533,48 @@ describe('a staged file that changes after it was checked', () => {
   })
 })
 
+// A storage hiccup while the copies are being checked must not leave them
+// behind: nothing points at them, and the expiry rule only covers uploads/.
+describe('the storage fails while the copied photos are being checked', () => {
+  it('on create, throws and leaves nothing under books/ and no rows', async () => {
+    const actor = await testActor()
+    const ticket = stage()
+    // The staged files are checked before the copy; reads fail from the copy on.
+    storage.beforeNextCopy(() => storage.failReads())
+
+    await expect(
+      createListing(
+        actor,
+        { ...form, photos: [newPhoto(ticket)] },
+        { storage },
+      ),
+    ).rejects.toThrow()
+
+    expect(await db.select().from(books)).toHaveLength(0)
+    expect(await db.select().from(bookImages)).toHaveLength(0)
+    expect(finalKeys()).toEqual([])
+  })
+
+  it('on edit, throws and leaves the book and its photos as they were', async () => {
+    const { actor, id, photos } = await createWithPhotos([1200])
+    const keysBefore = finalKeys()
+    const ticket = stage()
+    storage.beforeNextCopy(() => storage.failReads())
+
+    await expect(
+      updateListing(
+        actor,
+        id,
+        { ...form, photos: [oldPhoto(photos[0].imageId), newPhoto(ticket)] },
+        { storage },
+      ),
+    ).rejects.toThrow()
+
+    expect((await rowsOf(id)).map((r) => r.id)).toEqual([photos[0].imageId])
+    expect(finalKeys()).toEqual(keysBefore)
+  })
+})
+
 describe('the same ticket saved twice at the same moment', () => {
   it('ends with one new photo and no stray files, whichever save wins', async () => {
     const { actor, id, photos } = await createWithPhotos([1200])
