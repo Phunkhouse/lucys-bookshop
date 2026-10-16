@@ -6,6 +6,26 @@ const databaseEnvSchema = z.object({
 
 const HOSTNAME = /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/i
 
+// Where photos are read from: a public address (r2.dev today, a custom domain
+// later) or a path on the app itself (/images) if the app serves them.
+// A trailing slash is removed. Anything else is refused.
+const imageBaseUrl = z.string().transform((value, ctx) => {
+  const trimmed = value.replace(/\/+$/, '')
+  const isAppPath = trimmed.startsWith('/') && !trimmed.startsWith('//')
+  let isPublicUrl = false
+  try {
+    isPublicUrl = ['http:', 'https:'].includes(new URL(trimmed).protocol)
+  } catch {}
+  if (trimmed === '' || !(isAppPath || isPublicUrl)) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Must be an http(s) address or a path starting with /',
+    })
+    return z.NEVER
+  }
+  return trimmed
+})
+
 const envSchema = databaseEnvSchema
   .extend({
     // Signs session cookies. Generate with: openssl rand -base64 32
@@ -14,6 +34,18 @@ const envSchema = databaseEnvSchema
     // has its own address, taken from VERCEL_URL (set by Vercel, no protocol).
     BETTER_AUTH_URL: z.url().optional(),
     VERCEL_URL: z.string().optional(),
+    // Object storage for photos: Cloudflare R2 in production, MinIO locally.
+    STORAGE_ENDPOINT: z.url(),
+    STORAGE_BUCKET: z.string().min(1),
+    STORAGE_ACCESS_KEY_ID: z.string().min(1),
+    STORAGE_SECRET_ACCESS_KEY: z.string().min(1),
+    STORAGE_REGION: z.string().min(1).default('auto'),
+    // MinIO needs path-style addresses; R2 works either way.
+    STORAGE_FORCE_PATH_STYLE: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    IMAGE_BASE_URL: imageBaseUrl,
   })
   .transform(({ BETTER_AUTH_URL, VERCEL_URL, ...rest }, ctx) => {
     const fromVercel =
