@@ -50,7 +50,7 @@ Where book photos are kept and how to set it up. Everything here uses invented e
 
 The origins must match the addresses the browser shows, with `https://` and no trailing slash. A change takes about 30 seconds.
 
-4. **Expiry for abandoned uploads.** In the bucket's settings add an object lifecycle rule: prefix `uploads/`, delete after 1 day. It removes photos that were uploaded but never saved with a book.
+4. **Expiry for abandoned uploads.** In the bucket's **Settings**, under **Object Lifecycle Rules**, click **Add**. Rule name `expire-staging-uploads`; under **Rule scope**, the prefix `uploads/` (it says optional, but **never leave it empty**: without a prefix the rule would also delete saved photos); under **Lifecycle action**, tick **Delete uploaded objects after** and set 1 Day. Save changes. It removes photos that were uploaded but never saved with a book. Cloudflare deletes expired objects within about a day of their expiry, so "1 day" means one to two. A default rule, "Default Multipart Abort Rule", already exists and is left as it is.
 5. **API token.** **R2 → Overview → Account Details → Manage API Tokens → Create Account API token**, permission **Object Read & Write**, limited to this one bucket. Copy the Access Key ID and the Secret Access Key (shown once) into a password manager. The raw "Token value" is not used by the app.
 6. **Vercel.** In the project's **Settings → Environment Variables**, add the variables above for Production and Preview.
 
