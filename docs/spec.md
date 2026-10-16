@@ -1,8 +1,8 @@
-# Used Books E-shop: Spec v10
+# Used Books E-shop: Spec v11
 
-Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04) and the M1 and M2 planning rounds (2026-10-08) are merged in. Sections that changed from v9 are marked **(v10)**; v9 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
+Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04) and the M1 and M2 planning rounds (2026-10-08) are merged in. Sections that changed from v10 are marked **(v11)**; v10 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
 
-## 1. Purpose **(v4)**
+## 1. Purpose **(v11)**
 
 A minimalist online shop where one seller sells her finished books, one copy at a time. Closer to a marketplace listing than to a classic e-shop: a few sales a month, no stock, no scaling concerns.
 
@@ -23,7 +23,7 @@ The developer writes almost no code. His role is the one described in many AI-en
 - **Low-scrutiny areas** (skim, rely on CI and a visual check): styling, copy, boilerplate.
 - **A second pair of eyes:** after Claude writes a PR, a separate review pass (a fresh Claude session or subagent that has not seen the writing) checks it against the spec before the developer reads it.
 - **Definition of done per milestone:** CI green, tests for the risky logic, checked on a real phone, and a short "why this design" note in `docs/decisions/`.
-- **CLAUDE.md** in the repo holds conventions (folder layout, the framework-free service layer rule, naming, testing rules, what never to commit) so every session starts from the same rules.
+- **AGENTS.md** in the repo holds conventions (folder layout, the framework-free service layer rule, naming, testing rules, what never to commit) so every session starts from the same rules, whichever coding agent runs it. `CLAUDE.md` only imports it (decision note 0013).
 
 ## 2. Key insight: every item is unique
 
@@ -260,13 +260,13 @@ Also: privacy policy and cookie rules (GDPR); QR payments need only the seller's
 - **CI/CD and jobs:** GitHub Actions for lint, typecheck, test, build, and **deploy to Vercel** with a token, **applying pending database migrations to Neon as part of the deploy** (a deploy must never go live ahead of its schema; until this exists, run `pnpm db:migrate` against Neon by hand before merging a PR that adds a migration); plus scheduled workflows for (1) the seller reminder, calling a secret-protected endpoint every hour or so (runs can be delayed slightly), and (2) a periodic database backup.
 - **Hosting:** Vercel Hobby (see 9 for the terms caveat). Avoid Vercel-only features (Blob, Edge Config, Vercel Cron, image optimization).
 
-## 11. Milestones **(v8)**
+## 11. Milestones **(v11)**
 
 Order: the working shop comes first. The transactional core (cart, reservation, checkout, orders) is the riskiest part, so it is built before the read-only catalog refinements (filters, sorts, search).
 
 Each milestone ends with a short written note on the design choices made and why (kept in `docs/decisions/`), and meets the definition of done in section 1.
 
-- **M0 Setup:** repo (public), Next.js, SCSS and CSS Modules, Docker Postgres, CI, CLAUDE.md, linting and formatting, test setup, `docs/decisions/`, locale routing with the Czech messages file, `.env.example` and env-driven config.
+- **M0 Setup:** repo (public), Next.js, SCSS and CSS Modules, Docker Postgres, CI, AGENTS.md, linting and formatting, test setup, `docs/decisions/`, locale routing with the Czech messages file, `.env.example` and env-driven config.
 - **M1 Catalog read path:** Drizzle schema (book, genre, book-genre, book-image), database integration test setup, seed data (about 30 invented books covering every status), catalog page reading from the database with visible statuses (reserved badge, sold within 14 days), book detail page with `/books/<id>/<slug>`, redirect and 404 for hidden books. No pagination, filters or add-to-cart yet (the button is a disabled placeholder at most).
 - **M2 Admin:** Better Auth login (one admin level, two script-created accounts), phone-first add/edit book with the browser-side resize and presigned upload pipeline (up to 5 photos, placeholder), status management.
 - **M3 Cart and reservation:** client cart, server validation, lazy-expiry reservation logic with tests for the race condition.
@@ -346,3 +346,4 @@ Still open:
 | 2026-10-08 | Admin has one level, no owner/seller roles; two accounts (developer, seller) created by script, sign-up disabled, session checked in every admin action (M2)                                                                       |
 | 2026-10-09 | Admin list shows "last changed" (from `updatedAt`), not time in status; an exact `statusChangedAt` waits for the stale-hidden flag. Hide works only on available books, show only on hidden ones; reserved and sold have no toggle |
 | 2026-10-16 | Only hidden books can be deleted, after a confirmation dialog; sold books are never deleted. Bulk delete is left for later                                                                                                         |
+| 2026-10-16 | Project conventions live in `AGENTS.md` (read by Codex and other agents); `CLAUDE.md` only imports it                                                                                                                              |
