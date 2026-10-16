@@ -7,7 +7,9 @@ import { db } from '@/server/db/client'
 import { bookImages, books } from '@/server/db/schema'
 import { resetDatabase } from '@/server/db/test-helpers'
 import { FakeObjectStorage } from '@/server/storage/fake-object-storage'
-import { stageUpload } from '@/server/storage/test-helpers'
+import { MAX_FILE_BYTES } from '@/server/storage/rules'
+import { stageUpload, stagingKey } from '@/server/storage/test-helpers'
+import { makeJpeg, makePng } from '@/server/storage/test-jpeg'
 import { createListing, getListingForEdit, updateListing } from './book-listing'
 
 const now = new Date('2026-10-16T12:00:00.000Z')
@@ -449,5 +451,115 @@ describe('getListingForEdit photos', () => {
     if (!created.ok) throw new Error('expected the listing to be created')
 
     expect((await getListingForEdit(actor, created.id))!.photos).toEqual([])
+  })
+})
+
+// The server checks the staged files, then copies them. Until the copy, whoever
+// holds the upload links can still replace a staged file, so the files that were
+// copied are checked again: they are what the shop will serve, and nobody else
+// can write there.
+describe('a staged file that changes after it was checked', () => {
+  const swapLarge = (uploadId: string, bytes: Uint8Array) =>
+    storage.beforeNextCopy(() =>
+      storage.put(stagingKey(uploadId, 'large'), bytes, 'image/jpeg'),
+    )
+
+  it.each([
+    ['a PNG', makePng()],
+    [
+      'a file over 2 MB',
+      makeJpeg(1200, 1600, { totalBytes: MAX_FILE_BYTES + 1 }),
+    ],
+    ['a cut-off JPEG', makeJpeg(1200, 1600, { truncated: true })],
+  ])(
+    'refuses the save when it is swapped for %s, and keeps it out of books/',
+    async (_name, bytes) => {
+      const actor = await testActor()
+      const ticket = stage()
+      swapLarge(ticket, bytes)
+
+      const result = await createListing(
+        actor,
+        { ...form, photos: [newPhoto(ticket)] },
+        { storage },
+      )
+
+      expect(result).toEqual({
+        ok: false,
+        reason: 'invalid',
+        errors: { photos: 'photoInvalid' },
+      })
+      expect(await db.select().from(books)).toHaveLength(0)
+      expect(await db.select().from(bookImages)).toHaveLength(0)
+      expect(finalKeys()).toEqual([])
+    },
+  )
+
+  it('refuses an edit the same way, and leaves the book and its photos as they were', async () => {
+    const { actor, id, photos } = await createWithPhotos([1200])
+    const keysBefore = finalKeys()
+    const ticket = stage()
+    swapLarge(ticket, makePng())
+
+    const result = await updateListing(
+      actor,
+      id,
+      { ...form, photos: [oldPhoto(photos[0].imageId), newPhoto(ticket)] },
+      { storage },
+    )
+
+    expect(result).toMatchObject({
+      ok: false,
+      errors: { photos: 'photoInvalid' },
+    })
+    expect((await rowsOf(id)).map((r) => r.id)).toEqual([photos[0].imageId])
+    expect(finalKeys()).toEqual(keysBefore)
+  })
+
+  it('stores the size of the file that was really copied, when it is swapped for another valid photo', async () => {
+    const actor = await testActor()
+    const ticket = stage(1200) // checked as 1200 x 1600
+    swapLarge(ticket, makeJpeg(960, 1280))
+
+    const result = await createListing(
+      actor,
+      { ...form, photos: [newPhoto(ticket)] },
+      { storage },
+    )
+
+    if (!result.ok) throw new Error('expected the listing to be created')
+    const [row] = await rowsOf(result.id)
+    expect([row.width, row.height]).toEqual([960, 1280])
+  })
+})
+
+describe('the same ticket saved twice at the same moment', () => {
+  it('ends with one new photo and no stray files, whichever save wins', async () => {
+    const { actor, id, photos } = await createWithPhotos([1200])
+    const ticket = stage()
+    const input = {
+      ...form,
+      photos: [oldPhoto(photos[0].imageId), newPhoto(ticket)],
+    }
+
+    const outcomes = await Promise.allSettled([
+      updateListing(actor, id, input, { storage }),
+      updateListing(actor, id, input, { storage }),
+    ])
+
+    // At least one save goes through; the other may too, or fail on the missing
+    // staging files. Either way the book ends up consistent.
+    expect(outcomes.some((o) => o.status === 'fulfilled' && o.value.ok)).toBe(
+      true,
+    )
+    const rows = await rowsOf(id)
+    expect(rows).toHaveLength(2)
+    expect(finalKeys().sort()).toEqual(
+      rows
+        .flatMap((r) =>
+          ['large', 'medium', 'thumb'].map((n) => `${r.baseKey}/${n}.jpg`),
+        )
+        .sort(),
+    )
   })
 })

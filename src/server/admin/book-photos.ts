@@ -6,7 +6,7 @@ import { bookImages } from '@/server/db/schema'
 import type { ObjectStorage } from '@/server/storage/object-storage'
 import { removeImages } from '@/server/storage/remove-images'
 import { RENDITIONS, finalKey, stagingKey } from '@/server/storage/rules'
-import { verifyUpload } from '@/server/storage/verify-upload'
+import { verifyFinalPhoto, verifyUpload } from '@/server/storage/verify-upload'
 
 export type StoredPhoto = {
   id: string // the image id, also the id of its row
@@ -92,15 +92,22 @@ export async function preparePhotos(input: {
   return { ok: true, plan }
 }
 
-// Copies the new photos from staging to their final place. If any copy fails,
-// the ones already made are removed and the error is thrown: the save does not
-// happen.
+export type CopyPhotosResult =
+  { ok: true; plan: PlannedPhoto[] } | { ok: false; error: 'photoInvalid' }
+
+// Copies the new photos from staging to their final place, then checks the
+// copies. The staged files were checked before, but whoever holds the upload
+// links can replace them until now; the copies cannot be touched by anyone else,
+// so what is checked here is exactly what the shop will serve. The size stored
+// for a photo is the size of the copied file.
+//
+// If a copy fails, the ones already made are removed and the error is thrown. If
+// a copy fails the check, they are removed and the save is refused.
 export async function copyNewPhotos(
   storage: ObjectStorage,
   plan: PlannedPhoto[],
-): Promise<void> {
+): Promise<CopyPhotosResult> {
   const added = plan.filter((p) => p.kind === 'new')
-  const copied: string[] = []
   try {
     for (const planned of added) {
       for (const rendition of RENDITIONS) {
@@ -109,7 +116,6 @@ export async function copyNewPhotos(
           finalKey(planned.photo.baseKey, rendition),
         )
       }
-      copied.push(planned.photo.baseKey)
     }
   } catch (error) {
     // The photo being copied when it failed may be partly there too.
@@ -118,6 +124,32 @@ export async function copyNewPhotos(
       added.map((p) => p.photo.baseKey),
     )
     throw error
+  }
+
+  const sizes = new Map<string, { width: number; height: number }>()
+  for (const planned of added) {
+    const checked = await verifyFinalPhoto(storage, planned.photo.baseKey)
+    if (!checked.ok) {
+      await removeImages(
+        storage,
+        added.map((p) => p.photo.baseKey),
+      )
+      return { ok: false, error: 'photoInvalid' }
+    }
+    sizes.set(planned.photo.id, {
+      width: checked.width,
+      height: checked.height,
+    })
+  }
+
+  return {
+    ok: true,
+    plan: plan.map((planned) => {
+      const size = sizes.get(planned.photo.id)
+      return planned.kind === 'new' && size
+        ? { ...planned, photo: { ...planned.photo, ...size } }
+        : planned
+    }),
   }
 }
 

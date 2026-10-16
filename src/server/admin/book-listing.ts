@@ -135,8 +135,9 @@ export async function createListing(
       current: [],
     })
     if (!prepared.ok) return invalidPhotos(prepared.error)
-    plan = prepared.plan
-    await copyNewPhotos(storage, plan)
+    const copied = await copyNewPhotos(storage, prepared.plan)
+    if (!copied.ok) return invalidPhotos(copied.error)
+    plan = copied.plan
   }
 
   const makeShortId = options.generateShortId ?? generateShortId
@@ -222,7 +223,11 @@ export async function updateListing(
     })
     if (!prepared.ok) return invalidPhotos(prepared.error)
     plan = prepared.plan
-    if (storage) await copyNewPhotos(storage, plan)
+    if (storage) {
+      const copied = await copyNewPhotos(storage, plan)
+      if (!copied.ok) return invalidPhotos(copied.error)
+      plan = copied.plan
+    }
   }
 
   let removed: StoredPhoto[] = []

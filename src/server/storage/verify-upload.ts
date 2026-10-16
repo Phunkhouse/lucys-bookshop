@@ -5,6 +5,7 @@ import {
   MAX_FILE_BYTES,
   MAX_LONG_EDGE,
   RENDITIONS,
+  finalKey,
   stagingKey,
   type Rendition,
 } from './rules'
@@ -27,18 +28,18 @@ const HEADER_BYTES = 64 * 1024
 
 const fail = (reason: VerifyReason): VerifyResult => ({ ok: false, reason })
 
-// Checks an upload in staging before it may become part of a book (spec 6.9:
-// "the server checks each uploaded object"). Nothing here comes from the
-// browser: type, size, the first and last bytes and the picture size are all
-// read from the stored files.
-export async function verifyUpload(
+// Checks the three sizes of a photo wherever they are stored (spec 6.9: "the
+// server checks each uploaded object"). Nothing here comes from the browser:
+// type, size, the first and last bytes and the picture size are all read from the
+// stored files.
+async function verifyRenditions(
   storage: ObjectStorage,
-  uploadId: string,
+  keyFor: (rendition: Rendition) => string,
 ): Promise<VerifyResult> {
   const sizes = {} as Record<Rendition, { width: number; height: number }>
 
   for (const rendition of RENDITIONS) {
-    const key = stagingKey(uploadId, rendition)
+    const key = keyFor(rendition)
     const info = await storage.head(key)
     if (!info) return fail('missing')
     if (info.contentType !== 'image/jpeg') return fail('wrong_type')
@@ -90,4 +91,24 @@ export async function verifyUpload(
   }
 
   return { ok: true, width: sizes.large.width, height: sizes.large.height }
+}
+
+// An upload waiting in the staging area.
+export function verifyUpload(
+  storage: ObjectStorage,
+  uploadId: string,
+): Promise<VerifyResult> {
+  return verifyRenditions(storage, (rendition) =>
+    stagingKey(uploadId, rendition),
+  )
+}
+
+// A photo in its final place. Staged files can be replaced by whoever holds the
+// upload links until the copy happens, so the copies are checked again: they are
+// what the shop will serve, and nobody else can write there.
+export function verifyFinalPhoto(
+  storage: ObjectStorage,
+  baseKey: string,
+): Promise<VerifyResult> {
+  return verifyRenditions(storage, (rendition) => finalKey(baseKey, rendition))
 }

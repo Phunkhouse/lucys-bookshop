@@ -1,6 +1,6 @@
 import { makeJpeg } from './test-jpeg'
 import type { FakeObjectStorage } from './fake-object-storage'
-import { RENDITIONS, type Rendition } from './rules'
+import { RENDITIONS, finalKey, type Rendition } from './rules'
 
 type JpegArgs = NonNullable<Parameters<typeof makeJpeg>[2]>
 
@@ -23,11 +23,11 @@ const DEFAULT_SIZE: Record<Rendition, [number, number]> = {
 export const stagingKey = (uploadId: string, rendition: Rendition) =>
   `uploads/${uploadId}/${rendition}.jpg`
 
-// Puts the three renditions of one upload into staging, as the browser would
-// after a successful presigned upload. Override any detail to break it.
-export function stageUpload(
+// Puts the three sizes of a photo at the keys `keyFor` gives. Override any
+// detail to break it.
+export function putRenditions(
   storage: FakeObjectStorage,
-  uploadId: string,
+  keyFor: (rendition: Rendition) => string,
   overrides: Partial<Record<Rendition, RenditionSpec>> = {},
 ) {
   for (const rendition of RENDITIONS) {
@@ -35,10 +35,33 @@ export function stageUpload(
     if (spec.missing) continue
     const [width, height] = DEFAULT_SIZE[rendition]
     storage.put(
-      stagingKey(uploadId, rendition),
+      keyFor(rendition),
       spec.bytes ??
         makeJpeg(spec.width ?? width, spec.height ?? height, spec.jpeg),
       spec.contentType ?? 'image/jpeg',
     )
   }
+}
+
+// What the browser does after a successful presigned upload: the three sizes
+// land in the staging area.
+export function stageUpload(
+  storage: FakeObjectStorage,
+  uploadId: string,
+  overrides: Partial<Record<Rendition, RenditionSpec>> = {},
+) {
+  putRenditions(
+    storage,
+    (rendition) => stagingKey(uploadId, rendition),
+    overrides,
+  )
+}
+
+// A photo already saved with a book, at its final place.
+export function putFinalPhoto(
+  storage: FakeObjectStorage,
+  baseKey: string,
+  overrides: Partial<Record<Rendition, RenditionSpec>> = {},
+) {
+  putRenditions(storage, (rendition) => finalKey(baseKey, rendition), overrides)
 }

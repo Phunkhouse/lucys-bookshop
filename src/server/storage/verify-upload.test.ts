@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { FakeObjectStorage } from './fake-object-storage'
 import { MAX_FILE_BYTES } from './rules'
-import { stageUpload } from './test-helpers'
+import { putFinalPhoto, stageUpload } from './test-helpers'
 import { makePng } from './test-jpeg'
-import { verifyUpload } from './verify-upload'
+import { verifyFinalPhoto, verifyUpload } from './verify-upload'
 
 const ID = '0b9d4b6e-6d57-4c2e-9d0a-3f3f5b0c7a11'
 let storage: FakeObjectStorage
@@ -157,5 +157,64 @@ describe('verifyUpload: what is rejected', () => {
     stageUpload(storage, ID, { large: { width: 0, height: 1600 } })
 
     expect(await reason()).toBe('not_jpeg')
+  })
+})
+
+// The server verifies the files it copied into place (the ones that will be
+// served), not only the staged ones, because staged files can be replaced
+// until the copy happens. Same rules, other location.
+describe('verifyFinalPhoto', () => {
+  const BASE = 'books/b1/i1'
+  const finalReason = async () => {
+    const result = await verifyFinalPhoto(storage, BASE)
+    if (result.ok) throw new Error('expected the photo to be rejected')
+    return result.reason
+  }
+
+  it('accepts a photo whose three sizes are valid, and reports the size of the large one', async () => {
+    putFinalPhoto(storage, BASE)
+
+    expect(await verifyFinalPhoto(storage, BASE)).toEqual({
+      ok: true,
+      width: 1200,
+      height: 1600,
+    })
+  })
+
+  it('reports the size of the file that is really there', async () => {
+    putFinalPhoto(storage, BASE, { large: { width: 960, height: 1280 } })
+
+    expect(await verifyFinalPhoto(storage, BASE)).toMatchObject({
+      ok: true,
+      width: 960,
+      height: 1280,
+    })
+  })
+
+  it.each([
+    ['a missing size', { medium: { missing: true } }, 'missing'],
+    ['another type', { medium: { contentType: 'image/png' } }, 'wrong_type'],
+    ['an empty file', { thumb: { bytes: new Uint8Array() } }, 'empty'],
+    [
+      'a file over 2 MB',
+      { large: { jpeg: { totalBytes: MAX_FILE_BYTES + 1 } } },
+      'too_large',
+    ],
+    ['a PNG', { large: { bytes: makePng() } }, 'not_jpeg'],
+    ['a cut-off file', { large: { jpeg: { truncated: true } } }, 'truncated'],
+    [
+      'a picture that is too long',
+      { large: { width: 1201, height: 1601 } },
+      'bad_dimensions',
+    ],
+    [
+      'sizes with other proportions',
+      { thumb: { width: 480, height: 360 } },
+      'bad_dimensions',
+    ],
+  ] as const)('rejects %s', async (_name, overrides, expected) => {
+    putFinalPhoto(storage, BASE, overrides)
+
+    expect(await finalReason()).toBe(expected)
   })
 })
