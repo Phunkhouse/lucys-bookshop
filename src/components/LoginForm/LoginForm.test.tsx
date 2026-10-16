@@ -82,6 +82,24 @@ describe('LoginForm', () => {
     )
   })
 
+  // A 403 is the server refusing the request (for example an untrusted
+  // address), not a wrong password. Saying "wrong password" sends people
+  // hunting for a typo that is not there.
+  it.each([[403], [400], [500], [undefined]] as const)(
+    'does not blame the password for status %s',
+    async (status) => {
+      signInEmail.mockResolvedValue({ data: null, error: { status } })
+      renderWithIntl(<LoginForm next="/admin" />)
+
+      fillAndSubmit()
+
+      expect((await screen.findByRole('alert')).textContent).toBe(
+        'Přihlášení se nepodařilo. Zkuste to prosím znovu.',
+      )
+      expect(push).not.toHaveBeenCalled()
+    },
+  )
+
   it('shows a generic message when the request itself fails', async () => {
     signInEmail.mockRejectedValue(new Error('network'))
     renderWithIntl(<LoginForm next="/admin" />)
