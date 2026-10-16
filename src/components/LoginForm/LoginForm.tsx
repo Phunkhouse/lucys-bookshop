@@ -30,7 +30,15 @@ export function LoginForm({ next }: LoginFormProps) {
         password: String(form.get('password')),
       })
       if (failure) {
-        setError(failure.status === 429 ? 'tooMany' : 'invalid')
+        // Only a 401 means the e-mail or password was wrong. Anything else (a
+        // refused origin, a server error) is not the seller's typo.
+        setError(
+          failure.status === 401
+            ? 'invalid'
+            : failure.status === 429
+              ? 'tooMany'
+              : 'generic',
+        )
         return
       }
       router.push(next)
