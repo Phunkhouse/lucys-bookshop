@@ -145,6 +145,72 @@ describe('parseBookForm', () => {
     ])
   })
 
+  describe('photos', () => {
+    const existing = '5b7f6c0e-3f1a-4a52-9d6b-0b1c2d3e4f50'
+    const uploaded = '0b9d4b6e-6d57-4c2e-9d0a-3f3f5b0c7a11'
+
+    it('leaves photos out of the result when the form does not send them', () => {
+      const result = parse()
+
+      if (!result.ok) throw new Error('expected valid input')
+      expect('photos' in result.data).toBe(false)
+    })
+
+    it('keeps the order of existing and newly uploaded photos', () => {
+      const photos = [
+        { kind: 'new', uploadId: uploaded },
+        { kind: 'existing', imageId: existing },
+      ]
+
+      expect(parse({ photos })).toMatchObject({ ok: true, data: { photos } })
+    })
+
+    it('accepts an empty list, which means "no photos"', () => {
+      expect(parse({ photos: [] })).toMatchObject({
+        ok: true,
+        data: { photos: [] },
+      })
+    })
+
+    it('accepts five photos and rejects six', () => {
+      const entries = (count: number) =>
+        Array.from({ length: count }, (_, i) => ({
+          kind: 'new',
+          uploadId: `0b9d4b6e-6d57-4c2e-9d0a-3f3f5b0c7a0${i}`,
+        }))
+
+      expect(parse({ photos: entries(5) }).ok).toBe(true)
+      expect(errorsOf({ photos: entries(6) }).photos).toBe('tooManyPhotos')
+    })
+
+    it.each([
+      [{ kind: 'new' }],
+      [{ kind: 'new', uploadId: 'not-a-uuid' }],
+      [{ kind: 'existing', imageId: '' }],
+      [{ kind: 'other', imageId: '5b7f6c0e-3f1a-4a52-9d6b-0b1c2d3e4f50' }],
+      ['text'],
+      [null],
+    ])('rejects the malformed entry %j', (entry) => {
+      expect(errorsOf({ photos: [entry] }).photos).toBe('invalid')
+    })
+
+    it('rejects photos that are not a list', () => {
+      expect(errorsOf({ photos: 'x' }).photos).toBe('invalid')
+    })
+
+    it('drops extra fields inside an entry', () => {
+      const result = parse({
+        photos: [{ kind: 'new', uploadId: uploaded, key: 'books/other/x' }],
+      })
+
+      expect(result).toMatchObject({
+        ok: true,
+        data: { photos: [{ kind: 'new', uploadId: uploaded }] },
+      })
+      if (result.ok) expect(result.data.photos?.[0]).not.toHaveProperty('key')
+    })
+  })
+
   it.each([null, undefined, 'text', 42, []])(
     'rejects %j as a whole',
     (input) => {

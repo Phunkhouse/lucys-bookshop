@@ -347,6 +347,7 @@ describe('getListingForEdit', () => {
         price: '189,50',
         isbn: '9780306406157',
       },
+      photos: [],
     })
   })
 

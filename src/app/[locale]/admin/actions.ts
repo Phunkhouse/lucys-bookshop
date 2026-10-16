@@ -2,8 +2,10 @@
 
 import { z } from 'zod'
 import { requireAdmin } from '@/lib/auth'
+import { storage } from '@/lib/storage'
 import { deleteBook } from '@/server/admin/book-delete'
 import { setBookHidden } from '@/server/admin/book-status'
+import { removeImages } from '@/server/storage/remove-images'
 import type { SetHiddenResult } from '@/server/admin/book-status'
 
 const input = z.object({ bookId: z.string(), hidden: z.boolean() })
@@ -42,6 +44,11 @@ export async function deleteBookAction(
   if (!parsed.success) return { outcome: 'refused', reason: 'not_found' }
 
   const result = await deleteBook(actor, parsed.data, new Date())
-  // PR D: remove result.imageKeys from object storage here.
-  return result.outcome === 'deleted' ? { outcome: 'deleted' } : result
+  if (result.outcome === 'deleted') {
+    // The book is gone; now its photo files. A failure here is harmless
+    // leftovers, so it does not undo the delete.
+    await removeImages(storage, result.imageKeys)
+    return { outcome: 'deleted' }
+  }
+  return result
 }

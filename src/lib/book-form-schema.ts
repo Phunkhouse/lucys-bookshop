@@ -26,6 +26,13 @@ const LIMITS = {
   conditionNote: 300,
   description: 5000,
 }
+// Up to five photos per book (spec 6.9); the database allows positions 0 to 4.
+export const MAX_PHOTOS = 5
+
+// One entry of the photo list: a photo the book already has, or one just
+// uploaded to the staging area and waiting for Save.
+export type PhotoEntry =
+  { kind: 'existing'; imageId: string } | { kind: 'new'; uploadId: string }
 
 // What the form holds: text as typed, genres as keys.
 export type BookFormValues = {
@@ -38,6 +45,8 @@ export type BookFormValues = {
   description: string
   price: string
   isbn: string
+  // Left out: photos stay as they are. An empty list removes them all.
+  photos?: PhotoEntry[]
 }
 
 // Every error is one of these keys.
@@ -53,6 +62,9 @@ export const BOOK_FORM_ERROR_KEYS = [
   'pricePositive',
   'priceTooHigh',
   'isbnInvalid',
+  'tooManyPhotos',
+  'photoMissing',
+  'photoInvalid',
   'notFound',
   'saveFailed',
 ] as const
@@ -103,6 +115,16 @@ const bookFormSchema = z.object({
     ctx.addIssue({ code: 'custom', message: result.error })
     return z.NEVER
   }),
+  photos: z
+    .array(
+      z.discriminatedUnion('kind', [
+        z.object({ kind: z.literal('existing'), imageId: z.uuid() }),
+        z.object({ kind: z.literal('new'), uploadId: z.uuid() }),
+      ]),
+      { error: 'invalid' },
+    )
+    .max(MAX_PHOTOS, 'tooManyPhotos')
+    .optional(),
   isbn: z
     .string({ error: 'invalid' })
     .optional()
