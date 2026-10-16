@@ -103,7 +103,23 @@
       },
       "add": "Přidat knihu",
       "edit": "Upravit: {title}",
-      "editShort": "Upravit"
+      "editShort": "Upravit",
+      "delete": {
+        "button": "Smazat",
+        "confirmTitle": "Smazat knihu?",
+        "confirmText": "Kniha „{title}“ bude trvale smazána, včetně fotek. Tuto akci nejde vrátit.",
+        "cancel": "Zrušit",
+        "confirm": "Ano, smazat",
+        "deleting": "Mažu…",
+        "errors": {
+          "notHidden": "Knihu nejdřív skryjte, pak ji půjde smazat.",
+          "reserved": "Kniha je rezervovaná, smazat ji nejde.",
+          "sold": "Prodané knihy se nemažou, jejich odkaz musí dál fungovat.",
+          "hasOrders": "Kniha je v objednávce, smazat ji nejde.",
+          "notFound": "Tuto knihu se nepodařilo najít.",
+          "failed": "Smazání se nepodařilo. Zkuste to prosím znovu."
+        }
+      }
     },
     "form": {
       "newTitle": "Přidat knihu",

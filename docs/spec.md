@@ -1,6 +1,6 @@
-# Used Books E-shop: Spec v9
+# Used Books E-shop: Spec v10
 
-Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04) and the M1 and M2 planning rounds (2026-10-08) are merged in. Sections that changed from v8 are marked **(v9)**; v8 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
+Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04) and the M1 and M2 planning rounds (2026-10-08) are merged in. Sections that changed from v9 are marked **(v10)**; v9 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
 
 ## 1. Purpose **(v4)**
 
@@ -171,7 +171,7 @@ Statuses: `pending_payment` → `paid` → `shipped` → `completed`, plus `canc
 - **Delivered by email to the seller's own address (v5)** through a `SellerNotifier` interface. The planned implementation uses a free provider's sandbox sender, which can deliver only to the email of the provider account owner, so the production provider account must be registered with her address (during development, notifications go to the developer's own address). To verify in a short spike at M5: reliability of the sandbox sender, spam-folder behavior, and a fallback (a single verified sender address on another free provider). A Telegram bot stays an option behind the same interface.
 - **Buyers receive no emails in v1.** An `EmailSender` interface is added later together with a custom domain and a verified sending domain.
 
-### 6.9 Admin area **(v9)**
+### 6.9 Admin area **(v10)**
 
 **Essential. Without it the seller can't run the shop.** Built as part of the app, not as a CMS, because the admin is the business logic (reservations, orders, payments).
 
@@ -182,7 +182,7 @@ Statuses: `pending_payment` → `paid` → `shipped` → `completed`, plus `canc
 - Nice to have: ISBN lookup to prefill title/author/cover (Open Library or Google Books API).
 - Responsive for both phone and desktop.
 - Book list with status (available, reserved, sold, hidden), quick toggle to hide, and a status filter (including a "Hidden" view). Each book shows when it was last changed (from `updatedAt`, so any edit counts, not only a status change). The toggle appears only on available books (to hide) and hidden books (to show again). A reserved book leaves that state by expiry or by cancelling its order, and a sold book stays sold, so neither can be hidden; if a buyer reserves a book while the seller's page is stale, the toggle is refused with a message.
-- **Deleting a book is manual and guarded:** there is no automatic cleanup of hidden books. Delete asks for confirmation, is refused if any order references the book, and also removes the book's photos from object storage. Books that were ever ordered stay as `hidden` or `sold`; sold books are never cleaned up, because their detail page must keep working for shared links. If hidden books pile up, a "stale hidden" flag in the list (for example hidden for more than 90 days) can be added later; it flags only and never deletes.
+- **Deleting a book is manual and guarded:** there is no automatic cleanup of hidden books. **Only a hidden book can be deleted**: a hidden book is already out of the shop, so nothing breaks, while a live listing has to be hidden first and a sold book stays. Delete asks for confirmation (a dialog, shown as a sheet at the bottom of the screen on phones), is refused if any order references the book, and also removes the book's photos from object storage. Books that were ever ordered stay as `hidden` or `sold`; sold books are never cleaned up, because their detail page must keep working for shared links. If hidden books pile up, a "stale hidden" flag in the list (for example hidden for more than 90 days) can be added later; it flags only and never deletes.
 - Orders list and detail: status changes, "mark paid", extend reservation, expiring-soon flag, notes, "write to buyer".
 - Settings: Zásilkovna flat price, pickup instructions.
 
@@ -345,3 +345,4 @@ Still open:
 | 2026-10-08 | Deploy applies pending migrations to Neon (M7); until then run by hand before merging (the M1 page failed on Vercel: no tables)                                                                                                    |
 | 2026-10-08 | Admin has one level, no owner/seller roles; two accounts (developer, seller) created by script, sign-up disabled, session checked in every admin action (M2)                                                                       |
 | 2026-10-09 | Admin list shows "last changed" (from `updatedAt`), not time in status; an exact `statusChangedAt` waits for the stale-hidden flag. Hide works only on available books, show only on hidden ones; reserved and sold have no toggle |
+| 2026-10-16 | Only hidden books can be deleted, after a confirmation dialog; sold books are never deleted. Bulk delete is left for later                                                                                                         |

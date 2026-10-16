@@ -29,6 +29,7 @@ const render = (overrides: Partial<AdminBookItem> = {}) =>
       book={{ ...book, ...overrides }}
       now={now}
       setHidden={vi.fn()}
+      deleteBook={vi.fn()}
     />,
   )
 
@@ -74,6 +75,18 @@ describe('AdminBookRow', () => {
       name: 'Upravit: Stíny nad Vltavou',
     })
     expect(link.getAttribute('href')).toBe(`/admin/books/${book.id}/edit`)
+  })
+
+  it('offers Smazat only on hidden books', () => {
+    const { unmount } = render({ status: 'hidden' })
+    expect(screen.getByRole('button', { name: 'Smazat' })).toBeTruthy()
+    unmount()
+
+    for (const status of ['available', 'reserved', 'sold'] as const) {
+      const view = render({ status })
+      expect(screen.queryByRole('button', { name: 'Smazat' })).toBeNull()
+      view.unmount()
+    }
   })
 
   it('offers the hide button only where it applies', () => {
