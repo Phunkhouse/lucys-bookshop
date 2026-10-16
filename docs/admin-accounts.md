@@ -50,11 +50,11 @@ Add a script if this comes up often.
 
 ## Troubleshooting
 
-| Message or symptom                                     | Cause and fix                                                                                                 |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `An account with this email already exists`            | The email is taken (letter case is ignored). Use another email, or delete the old row as above.               |
-| `Too small: expected string to have >=12 characters`   | The password is shorter than 12 characters.                                                                   |
-| `Passwords do not match.`                              | The two entries differ. Run the command again.                                                                |
-| A database error saying relation "user" does not exist | Migrations were not applied to that database. Run `pnpm db:migrate` with the same `DATABASE_URL`.             |
-| Sign-in fails with an origin error in the browser      | `BETTER_AUTH_URL` must match the address you open (see `.env.example`). Restart the server after changing it. |
-| Sign-in answers "too many attempts"                    | The rate limit allows 5 attempts per address per 15 minutes. Wait and try again.                              |
+| Message or symptom                                     | Cause and fix                                                                                                                                                                                                                             |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `An account with this email already exists`            | The email is taken (letter case is ignored). Use another email, or delete the old row as above.                                                                                                                                           |
+| `Too small: expected string to have >=12 characters`   | The password is shorter than 12 characters.                                                                                                                                                                                               |
+| `Passwords do not match.`                              | The two entries differ. Run the command again.                                                                                                                                                                                            |
+| A database error saying relation "user" does not exist | Migrations were not applied to that database. Run `pnpm db:migrate` with the same `DATABASE_URL`.                                                                                                                                         |
+| Sign-in fails with an origin error in the browser      | `pnpm dev` trusts home-network addresses (`http://192.168.x.y`, any port) on its own. For any other address, set `BETTER_AUTH_URL` to the address you open (see `.env.example`) and restart. Deployed sites trust only `BETTER_AUTH_URL`. |
+| Sign-in answers "too many attempts"                    | The rate limit allows 5 attempts per address per 15 minutes. Wait and try again.                                                                                                                                                          |
