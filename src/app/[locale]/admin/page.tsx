@@ -5,7 +5,7 @@ import { Link } from '@/i18n/navigation'
 import { requireAdmin } from '@/lib/auth'
 import { listAdminBooks } from '@/server/admin/book-list'
 import { parseStatusFilter, STATUS_FILTERS } from '@/server/admin/status-filter'
-import { setBookHiddenAction } from './actions'
+import { deleteBookAction, setBookHiddenAction } from './actions'
 import css from './page.module.scss'
 
 export default async function AdminHome({
@@ -58,6 +58,7 @@ export default async function AdminHome({
                 book={book}
                 now={now}
                 setHidden={setBookHiddenAction.bind(null, book.id)}
+                deleteBook={deleteBookAction.bind(null, book.id)}
               />
             </li>
           ))}

@@ -2,6 +2,7 @@ import { useFormatter, useTranslations } from 'next-intl'
 import { Badge } from '@/components/Badge'
 import { BookStatusToggle } from '@/components/BookStatusToggle'
 import { ChangedAgo } from '@/components/ChangedAgo'
+import { DeleteBookButton } from '@/components/DeleteBookButton'
 import { Link } from '@/i18n/navigation'
 import type { AdminBookItem } from '@/server/admin/book-list'
 import type { SetHiddenResult } from '@/server/admin/book-status'
@@ -11,6 +12,7 @@ type AdminBookRowProps = {
   book: AdminBookItem
   now: Date
   setHidden: (hidden: boolean) => Promise<SetHiddenResult>
+  deleteBook: React.ComponentProps<typeof DeleteBookButton>['deleteBook']
 }
 
 const tone = {
@@ -20,7 +22,12 @@ const tone = {
   sold: 'sold',
 } as const
 
-export function AdminBookRow({ book, now, setHidden }: AdminBookRowProps) {
+export function AdminBookRow({
+  book,
+  now,
+  setHidden,
+  deleteBook,
+}: AdminBookRowProps) {
   const t = useTranslations('Admin.books')
   const format = useFormatter()
 
@@ -57,6 +64,11 @@ export function AdminBookRow({ book, now, setHidden }: AdminBookRowProps) {
           {t('editShort')}
         </Link>
         <BookStatusToggle status={book.status} setHidden={setHidden} />
+        <DeleteBookButton
+          status={book.status}
+          title={book.title}
+          deleteBook={deleteBook}
+        />
       </div>
     </article>
   )
