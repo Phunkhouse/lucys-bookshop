@@ -263,9 +263,14 @@ describe('BookForm photos', () => {
 
     addPhoto()
 
-    const save = await screen.findByRole('button', { name: 'Uložit' })
-    expect((save as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText('Počkejte, až se fotky nahrají.')).toBeTruthy()
+    // The photo section reports to the form one render later, so wait for it.
+    expect(
+      await screen.findByText('Počkejte, až se fotky nahrají.'),
+    ).toBeTruthy()
+    expect(
+      (screen.getByRole('button', { name: 'Uložit' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true)
   })
 
   it('blocks Save, and says why, while a photo has failed', async () => {
@@ -276,13 +281,14 @@ describe('BookForm photos', () => {
     addPhoto()
 
     await screen.findByText('Nahrání se nepovedlo. Zkuste to znovu.')
+    // The form hears about the failure one render later, so wait for it.
+    expect(
+      await screen.findByText('Odstraňte nebo zopakujte nepovedené fotky.'),
+    ).toBeTruthy()
     expect(
       (screen.getByRole('button', { name: 'Uložit' }) as HTMLButtonElement)
         .disabled,
     ).toBe(true)
-    expect(
-      screen.getByText('Odstraňte nebo zopakujte nepovedené fotky.'),
-    ).toBeTruthy()
   })
 
   it('sends the finished photos with the form, in order', async () => {
@@ -295,6 +301,10 @@ describe('BookForm photos', () => {
     fillRequired()
     addPhoto()
     await screen.findByText('Připraveno')
+    // Save is open again only when the form has heard that the photo is ready.
+    await waitFor(() =>
+      expect(screen.queryByText('Počkejte, až se fotky nahrají.')).toBeNull(),
+    )
 
     submit()
 
