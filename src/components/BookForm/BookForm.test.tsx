@@ -15,12 +15,23 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
+type FormProps = Parameters<typeof BookForm>[0]
+
+const fakeUpload = vi.fn()
+
 function renderForm(
   action = vi.fn().mockResolvedValue({ ok: true }),
-  initialValues?: Parameters<typeof BookForm>[0]['initialValues'],
+  initialValues?: FormProps['initialValues'],
+  extra: Partial<FormProps> = {},
 ) {
   renderWithIntl(
-    <BookForm genres={genres} action={action} initialValues={initialValues} />,
+    <BookForm
+      genres={genres}
+      action={action}
+      initialValues={initialValues}
+      upload={fakeUpload}
+      {...extra}
+    />,
   )
   return action
 }
@@ -169,6 +180,7 @@ describe('BookForm saving', () => {
       description: '',
       price: '189,50',
       isbn: '',
+      photos: [],
     })
     expect(refresh).toHaveBeenCalled()
   })
@@ -220,4 +232,145 @@ describe('BookForm saving', () => {
     )
     expect(push).not.toHaveBeenCalled()
   })
+})
+
+describe('BookForm photos', () => {
+  const photos = [
+    { imageId: 'img-1', previewUrl: 'https://img.test/1/thumb.jpg' },
+    { imageId: 'img-2', previewUrl: 'https://img.test/2/thumb.jpg' },
+  ]
+  const file = () => new File(['x'], 'a.jpg', { type: 'image/jpeg' })
+  const addPhoto = () =>
+    fireEvent.change(screen.getByLabelText('Přidat fotky'), {
+      target: { files: [file()] },
+    })
+
+  beforeEach(() => {
+    fakeUpload.mockReset()
+  })
+
+  it('has a Fotky section with the counter', () => {
+    renderForm()
+
+    expect(screen.getByRole('group', { name: 'Fotky' })).toBeTruthy()
+    expect(screen.getByText('0 z 5')).toBeTruthy()
+  })
+
+  it('blocks Save, and says why, while a photo is uploading', async () => {
+    fakeUpload.mockReturnValue(new Promise(() => {}))
+    renderForm()
+    fillRequired()
+
+    addPhoto()
+
+    // The photo section reports to the form one render later, so wait for it.
+    expect(
+      await screen.findByText('Počkejte, až se fotky nahrají.'),
+    ).toBeTruthy()
+    expect(
+      (screen.getByRole('button', { name: 'Uložit' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true)
+  })
+
+  it('blocks Save, and says why, while a photo has failed', async () => {
+    fakeUpload.mockResolvedValue({ ok: false, error: 'uploadFailed' })
+    renderForm()
+    fillRequired()
+
+    addPhoto()
+
+    await screen.findByText('Nahrání se nepovedlo. Zkuste to znovu.')
+    // The form hears about the failure one render later, so wait for it.
+    expect(
+      await screen.findByText('Odstraňte nebo zopakujte nepovedené fotky.'),
+    ).toBeTruthy()
+    expect(
+      (screen.getByRole('button', { name: 'Uložit' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true)
+  })
+
+  it('sends the finished photos with the form, in order', async () => {
+    fakeUpload.mockResolvedValue({
+      ok: true,
+      uploadId: 'u1',
+      previewUrl: 'blob:u1',
+    })
+    const action = renderForm()
+    fillRequired()
+    addPhoto()
+    await screen.findByText('Připraveno')
+    // Save is open again only when the form has heard that the photo is ready.
+    await waitFor(() =>
+      expect(screen.queryByText('Počkejte, až se fotky nahrají.')).toBeNull(),
+    )
+
+    submit()
+
+    await waitFor(() => expect(action).toHaveBeenCalled())
+    expect(action.mock.calls[0][0].photos).toEqual([
+      { kind: 'new', uploadId: 'u1' },
+    ])
+  })
+
+  it('sends an empty list for a book without photos', async () => {
+    const action = renderForm()
+    fillRequired()
+
+    submit()
+
+    await waitFor(() => expect(action).toHaveBeenCalled())
+    expect(action.mock.calls[0][0].photos).toEqual([])
+  })
+
+  it('shows the existing photos when editing, and sends them unchanged if nobody touches them', async () => {
+    const action = renderForm(
+      undefined,
+      {
+        title: 'Stíny',
+        author: 'Autor',
+        genres: [],
+        language: 'cs',
+        condition: 'used',
+        conditionNote: '',
+        description: '',
+        price: '189',
+        isbn: '',
+      },
+      { photos },
+    )
+    expect(screen.getByText('2 z 5')).toBeTruthy()
+
+    submit()
+
+    await waitFor(() => expect(action).toHaveBeenCalled())
+    expect(action.mock.calls[0][0].photos).toEqual([
+      { kind: 'existing', imageId: 'img-1' },
+      { kind: 'existing', imageId: 'img-2' },
+    ])
+  })
+
+  it.each([
+    [
+      'photoInvalid',
+      'Některá fotka není v pořádku. Odstraňte ji a nahrajte znovu.',
+    ],
+    ['tooManyPhotos', 'Fotek je příliš mnoho. Nejvíc je 5.'],
+    ['photoMissing', 'Nahrávání fotky vypršelo. Nahrajte ji znovu.'],
+  ])(
+    'shows the server problem %s in the photo section',
+    async (key, message) => {
+      const action = vi
+        .fn()
+        .mockResolvedValue({ ok: false, errors: { photos: key } })
+      renderForm(action)
+      fillRequired()
+
+      submit()
+
+      expect(await screen.findByText(message)).toBeTruthy()
+      expect(push).not.toHaveBeenCalled()
+    },
+  )
 })

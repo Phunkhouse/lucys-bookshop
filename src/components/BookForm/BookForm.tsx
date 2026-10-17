@@ -18,6 +18,11 @@ import {
   type BookFormResult,
   type BookFormValues,
 } from '@/lib/book-form-schema'
+import {
+  PhotoPicker,
+  type PhotoPickerState,
+  type UploadOutcome,
+} from '@/components/PhotoPicker'
 import css from './BookForm.module.scss'
 
 type BookFormProps = {
@@ -25,7 +30,17 @@ type BookFormProps = {
   genres: string[]
   action: (values: BookFormValues) => Promise<BookFormResult>
   initialValues?: BookFormValues
+  // The photos the book already has, with the address of a preview of each.
+  photos?: { imageId: string; previewUrl: string }[]
+  // Sends one photo to the storage. Left out, the real browser upload is used.
+  upload?: (file: File, signal: AbortSignal) => Promise<UploadOutcome>
 }
+
+// The real upload is loaded when the first photo is chosen.
+const defaultUpload = (file: File, signal: AbortSignal) =>
+  import('./browser-upload').then((module) =>
+    module.browserUpload(file, signal),
+  )
 
 const NEW_BOOK: BookFormValues = {
   title: '',
@@ -53,12 +68,27 @@ const resolver: Resolver<BookFormValues> = async (values) => {
   return { values: {}, errors }
 }
 
-export function BookForm({ genres, action, initialValues }: BookFormProps) {
+export function BookForm({
+  genres,
+  action,
+  initialValues,
+  photos = [],
+  upload = defaultUpload,
+}: BookFormProps) {
   const t = useTranslations('Admin.form')
   const tGenres = useTranslations('Genres')
   const locale = useLocale()
   const router = useRouter()
   const [formError, setFormError] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const [photoState, setPhotoState] = useState<PhotoPickerState>({
+    entries: photos.map((photo) => ({
+      kind: 'existing' as const,
+      imageId: photo.imageId,
+    })),
+    busy: false,
+    failed: false,
+  })
 
   const {
     register,
@@ -75,8 +105,9 @@ export function BookForm({ genres, action, initialValues }: BookFormProps) {
 
   async function onSubmit(values: BookFormValues) {
     setFormError(null)
+    setPhotoError(null)
     try {
-      const result = await action(values)
+      const result = await action({ ...values, photos: photoState.entries })
       if (result.ok) {
         router.push('/admin')
         router.refresh()
@@ -93,6 +124,10 @@ export function BookForm({ genres, action, initialValues }: BookFormProps) {
     for (const [field, key] of Object.entries(serverErrors)) {
       if (field === 'form') {
         setFormError(key)
+        continue
+      }
+      if (field === 'photos') {
+        setPhotoError(key)
         continue
       }
       setError(
@@ -247,6 +282,23 @@ export function BookForm({ genres, action, initialValues }: BookFormProps) {
         {descriptionState.message}
       </div>
 
+      <fieldset
+        className={css.group}
+        aria-describedby={photoError ? 'photos-error' : undefined}
+      >
+        <legend>{t('photos.legend')}</legend>
+        <PhotoPicker
+          initialPhotos={photos}
+          upload={upload}
+          onChange={setPhotoState}
+        />
+        {photoError && (
+          <p id="photos-error" className={css.error}>
+            {t(`errors.${photoError as 'photoInvalid'}`)}
+          </p>
+        )}
+      </fieldset>
+
       {textField('isbn', { autoComplete: 'off' })}
 
       {formError && (
@@ -255,7 +307,22 @@ export function BookForm({ genres, action, initialValues }: BookFormProps) {
         </p>
       )}
 
-      <button type="submit" className={css.submit} disabled={isSubmitting}>
+      {(photoState.busy || photoState.failed) && (
+        <p id="save-blocked" className={css.note}>
+          {photoState.failed
+            ? t('photos.blockedByFailed')
+            : t('photos.waiting')}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        className={css.submit}
+        disabled={isSubmitting || photoState.busy || photoState.failed}
+        aria-describedby={
+          photoState.busy || photoState.failed ? 'save-blocked' : undefined
+        }
+      >
         {isSubmitting ? t('saving') : t('save')}
       </button>
     </form>

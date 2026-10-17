@@ -156,7 +156,41 @@
         "priceTooHigh": "Cena může být nejvýše 100 000 Kč.",
         "isbnInvalid": "ISBN není platné. Zkontrolujte číslice.",
         "notFound": "Tuto knihu se nepodařilo najít.",
-        "saveFailed": "Uložení se nepodařilo. Zkuste to prosím znovu."
+        "saveFailed": "Uložení se nepodařilo. Zkuste to prosím znovu.",
+        "photoInvalid": "Některá fotka není v pořádku. Odstraňte ji a nahrajte znovu.",
+        "tooManyPhotos": "Fotek je příliš mnoho. Nejvíc je 5.",
+        "photoMissing": "Nahrávání fotky vypršelo. Nahrajte ji znovu."
+      },
+      "photos": {
+        "legend": "Fotky",
+        "hint": "Až 5 fotek, první je titulní.",
+        "counter": "{count} z {max}",
+        "add": "Přidat fotky",
+        "listLabel": "Fotky",
+        "tileTitle": "Fotka {n} z {total}",
+        "previewAlt": "Náhled fotky {n}",
+        "uploading": "Nahrávám…",
+        "ready": "Připraveno",
+        "forward": "Dopředu",
+        "back": "Dozadu",
+        "remove": "Odstranit",
+        "replace": "Nahradit",
+        "retry": "Zkusit znovu",
+        "forwardLabel": "Posunout fotku {n} dopředu",
+        "backLabel": "Posunout fotku {n} dozadu",
+        "removeLabel": "Odstranit fotku {n}",
+        "replaceLabel": "Nahradit fotku {n}",
+        "moved": "Fotka přesunuta na pozici {n} z {total}.",
+        "removed": "Fotka odstraněna.",
+        "limited": "Přidáno jen {count}. Nejvíc je {max} fotek.",
+        "waiting": "Počkejte, až se fotky nahrají.",
+        "blockedByFailed": "Odstraňte nebo zopakujte nepovedené fotky.",
+        "errors": {
+          "unreadable": "Tuto fotku nejde přečíst. Zkuste ji uložit jako JPEG nebo ji nahrát z telefonu.",
+          "tooLarge": "Fotka je i po zmenšení příliš velká.",
+          "tooExtreme": "Fotka má příliš protáhlý tvar.",
+          "uploadFailed": "Nahrání se nepovedlo. Zkuste to znovu."
+        }
       }
     }
   }

@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { BookForm } from '@/components/BookForm'
 import { Link } from '@/i18n/navigation'
+import { env } from '@/config/env'
+import { imageUrl } from '@/lib/image-url'
 import { requireAdmin } from '@/lib/auth'
 import { getListingForEdit, listGenreKeys } from '@/server/admin/book-listing'
 import { updateBookAction } from '../../actions'
@@ -26,6 +28,10 @@ export default async function EditBookPage({
       <BookForm
         genres={genres}
         initialValues={edit.values}
+        photos={edit.photos.map((photo) => ({
+          imageId: photo.imageId,
+          previewUrl: imageUrl(env.IMAGE_BASE_URL, photo.baseKey, 'thumb'),
+        }))}
         action={updateBookAction.bind(null, edit.id)}
       />
     </main>
