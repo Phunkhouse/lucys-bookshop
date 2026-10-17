@@ -74,6 +74,7 @@ export class S3ObjectStorage implements ObjectStorage {
       return {
         size: result.ContentLength ?? 0,
         contentType: result.ContentType ?? null,
+        cacheControl: result.CacheControl ?? null,
       }
     } catch (error) {
       if (isNotFound(error)) return null
@@ -94,12 +95,35 @@ export class S3ObjectStorage implements ObjectStorage {
       : new Uint8Array()
   }
 
-  async copy(fromKey: string, toKey: string) {
+  async copy(
+    fromKey: string,
+    toKey: string,
+    options: { cacheControl?: string } = {},
+  ) {
+    const source = `${this.bucket}/${encodeURIComponent(fromKey).replaceAll('%2F', '/')}`
+    if (!options.cacheControl) {
+      await this.client.send(
+        new CopyObjectCommand({
+          Bucket: this.bucket,
+          Key: toKey,
+          CopySource: source,
+        }),
+      )
+      return
+    }
+
+    // Setting a header means replacing the metadata, and replacing it drops the
+    // content type unless it is given again.
+    const original = await this.head(fromKey)
+    if (!original) throw new Error(`No such key: ${fromKey}`)
     await this.client.send(
       new CopyObjectCommand({
         Bucket: this.bucket,
         Key: toKey,
-        CopySource: `${this.bucket}/${encodeURIComponent(fromKey).replaceAll('%2F', '/')}`,
+        CopySource: source,
+        MetadataDirective: 'REPLACE',
+        ContentType: original.contentType ?? undefined,
+        CacheControl: options.cacheControl,
       }),
     )
   }

@@ -1,14 +1,20 @@
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
 import { Badge } from '@/components/Badge'
+import { BookPhoto } from '@/components/BookPhoto'
 import { Link } from '@/i18n/navigation'
 import type { BookDetail } from '@/server/catalog'
 import css from './BookDetailView.module.scss'
 
+// The photo column: about 40% of the page next to the text from 768 px up
+// (at most 458 px), the full width on a phone.
+const PHOTO_SIZES = '(min-width: 1232px) 458px, (min-width: 768px) 40vw, 100vw'
+
 type BookDetailViewProps = {
   book: BookDetail
+  imageBaseUrl: string
 }
 
-export function BookDetailView({ book }: BookDetailViewProps) {
+export function BookDetailView({ book, imageBaseUrl }: BookDetailViewProps) {
   const t = useTranslations('Book')
   const tGenres = useTranslations('Genres')
   const format = useFormatter()
@@ -40,8 +46,44 @@ export function BookDetailView({ book }: BookDetailViewProps) {
       </p>
 
       <div className={css.layout}>
-        {/* Photos arrive with the upload pipeline (M2). Until then every book gets the placeholder. */}
-        <div className={css.cover}>{t('noPhoto')}</div>
+        {book.images.length > 0 ? (
+          // Photos side by side, swiped through on a phone (scroll-snap). A list
+          // that scrolls needs a tab stop so a keyboard can reach it.
+          <ul
+            role="list"
+            className={css.gallery}
+            aria-label={t('photos.galleryLabel')}
+            tabIndex={book.images.length > 1 ? 0 : undefined}
+          >
+            {book.images.map((photo, index) => {
+              const many = book.images.length > 1
+              const place = { n: index + 1, total: book.images.length }
+              return (
+                <li key={photo.baseKey} className={css.slide}>
+                  <figure className={css.figure}>
+                    <BookPhoto
+                      photo={photo}
+                      baseUrl={imageBaseUrl}
+                      alt={
+                        many
+                          ? t('photos.alt', { title: book.title, ...place })
+                          : book.title
+                      }
+                      sizes={PHOTO_SIZES}
+                      priority={index === 0}
+                      className={css.photo}
+                    />
+                    {many && (
+                      <figcaption>{t('photos.caption', place)}</figcaption>
+                    )}
+                  </figure>
+                </li>
+              )
+            })}
+          </ul>
+        ) : (
+          <div className={css.cover}>{t('noPhoto')}</div>
+        )}
 
         <div className={css.info}>
           {book.status !== 'available' && (

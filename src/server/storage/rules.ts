@@ -12,6 +12,10 @@ export {
   type Rendition,
 } from '@/lib/photo-rules'
 
+// Saved photos never change: a changed photo is a new file at a new address. So
+// browsers may keep them for a year without asking again.
+export const PHOTO_CACHE_CONTROL = 'public, max-age=31536000, immutable'
+
 // A presigned upload permission is valid for 10 minutes.
 export const UPLOAD_TTL_SECONDS = 600
 

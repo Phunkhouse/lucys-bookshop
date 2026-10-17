@@ -105,6 +105,18 @@ describe('creating a book with photos', () => {
     expect(stagingKeys()).toEqual([])
   })
 
+  it('puts every saved file in place with Cache-Control for a year, "immutable"', async () => {
+    const { photos } = await createWithPhotos([1200, 600])
+
+    for (const photo of photos) {
+      for (const name of ['thumb', 'medium', 'large']) {
+        expect(
+          (await storage.head(`${photo.baseKey}/${name}.jpg`))?.cacheControl,
+        ).toBe('public, max-age=31536000, immutable')
+      }
+    }
+  })
+
   it('makes the first photo the cover in the shop', async () => {
     const { id } = await createWithPhotos([1200, 600])
 
@@ -354,6 +366,27 @@ describe('editing photos', () => {
     )
     expect(stagingKeys()).toEqual([])
     expect(finalKeys()).toHaveLength(9)
+  })
+
+  // Browsers may keep a photo for a year because an address never gets other
+  // content: a changed photo is a new file at a new address.
+  it('never reuses an address: a replacement lives elsewhere and the old files are gone', async () => {
+    const { actor, id, photos } = await createWithPhotos([1200])
+    const oldKey = photos[0].baseKey
+
+    await updateListing(
+      actor,
+      id,
+      { ...form, photos: [newPhoto(stage(900))] },
+      { storage },
+    )
+
+    const [row] = await rowsOf(id)
+    expect(row.baseKey).not.toBe(oldKey)
+    expect(row.baseKey.startsWith(`books/${id}/`)).toBe(true)
+    expect(storage.keys().some((key) => key.startsWith(`${oldKey}/`))).toBe(
+      false,
+    )
   })
 
   it('refuses a photo that belongs to another book, or does not exist, and changes nothing', async () => {

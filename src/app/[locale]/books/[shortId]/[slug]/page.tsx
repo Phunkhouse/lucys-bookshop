@@ -4,8 +4,10 @@ import { connection } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { cache } from 'react'
 import { BookDetailView } from '@/components/BookDetailView'
+import { env } from '@/config/env'
 import { shopConfig } from '@/config/shop'
 import { redirectTarget } from '@/lib/book-path'
+import { shareImage } from '@/lib/book-share-image'
 import { getBookByShortId } from '@/server/catalog'
 import css from './page.module.scss'
 
@@ -25,9 +27,13 @@ export async function generateMetadata({
   const description =
     book.description.slice(0, 160) ||
     (await getTranslations('Site'))('description')
+  const title = `${book.title} – ${book.author} | ${shopConfig.name}`
+  // The picture a chat app shows when the link is shared.
+  const image = shareImage(book, env.IMAGE_BASE_URL, env.BETTER_AUTH_URL)
   return {
-    title: `${book.title} – ${book.author} | ${shopConfig.name}`,
+    title,
     description,
+    openGraph: { title, description, images: image ? [image] : undefined },
   }
 }
 
@@ -47,7 +53,7 @@ export default async function BookPage({
 
   return (
     <main className={css.main}>
-      <BookDetailView book={book} />
+      <BookDetailView book={book} imageBaseUrl={env.IMAGE_BASE_URL} />
     </main>
   )
 }

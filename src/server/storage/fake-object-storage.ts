@@ -6,7 +6,7 @@ import type { ObjectStorage } from './object-storage'
 export class FakeObjectStorage implements ObjectStorage {
   private objects = new Map<
     string,
-    { bytes: Uint8Array; contentType: string }
+    { bytes: Uint8Array; contentType: string; cacheControl: string | null }
   >()
   private copiesLeft: number | null = null
   private deletesFail = false
@@ -22,8 +22,13 @@ export class FakeObjectStorage implements ObjectStorage {
   }
 
   // Test helper: put a file in place, as if it had been uploaded.
-  put(key: string, bytes: Uint8Array, contentType: string) {
-    this.objects.set(key, { bytes, contentType })
+  put(
+    key: string,
+    bytes: Uint8Array,
+    contentType: string,
+    cacheControl: string | null = null,
+  ) {
+    this.objects.set(key, { bytes, contentType, cacheControl })
   }
 
   // The first `count` copies work, every later one throws.
@@ -72,7 +77,11 @@ export class FakeObjectStorage implements ObjectStorage {
     if (this.readsFail) throw new Error('Read failed (simulated)')
     const object = this.objects.get(key)
     return object
-      ? { size: object.bytes.length, contentType: object.contentType }
+      ? {
+          size: object.bytes.length,
+          contentType: object.contentType,
+          cacheControl: object.cacheControl,
+        }
       : null
   }
 
@@ -83,7 +92,11 @@ export class FakeObjectStorage implements ObjectStorage {
     return object.bytes.slice(start, end + 1)
   }
 
-  async copy(fromKey: string, toKey: string) {
+  async copy(
+    fromKey: string,
+    toKey: string,
+    options: { cacheControl?: string } = {},
+  ) {
     if (this.beforeCopy) {
       const callback = this.beforeCopy
       this.beforeCopy = null
@@ -95,7 +108,10 @@ export class FakeObjectStorage implements ObjectStorage {
     }
     const object = this.objects.get(fromKey)
     if (!object) throw new Error(`No such key: ${fromKey}`)
-    this.objects.set(toKey, { ...object })
+    this.objects.set(toKey, {
+      ...object,
+      cacheControl: options.cacheControl ?? object.cacheControl,
+    })
   }
 
   async deleteMany(keys: string[]) {
