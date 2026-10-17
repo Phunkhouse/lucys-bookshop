@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { asc, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { testActor } from '@/server/auth/test-helpers'
+import { computeSizes } from '@/lib/photo-sizes'
 import { listCatalog } from '@/server/catalog'
 import { db } from '@/server/db/client'
 import { bookImages, books } from '@/server/db/schema'
@@ -33,13 +34,13 @@ beforeEach(async () => {
   storage = new FakeObjectStorage()
 })
 
-// Three sizes of the same 3:4 photo, scaled so each upload has its own width.
+// The three sizes a browser makes of a 3:4 photo that is `largeWidth` wide: the
+// same calculation, so the test photos are ones that can really exist.
 function stage(largeWidth = 1200) {
   const uploadId = randomUUID()
-  const large = { width: largeWidth, height: (largeWidth * 4) / 3 }
-  const medium = { width: largeWidth * 0.6, height: (largeWidth * 0.6 * 4) / 3 }
-  const thumb = { width: largeWidth * 0.3, height: (largeWidth * 0.3 * 4) / 3 }
-  stageUpload(storage, uploadId, { large, medium, thumb })
+  const computed = computeSizes(largeWidth, (largeWidth * 4) / 3)
+  if (!computed.ok) throw new Error('expected sizes')
+  stageUpload(storage, uploadId, computed.sizes)
   return uploadId
 }
 

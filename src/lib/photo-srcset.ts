@@ -9,8 +9,9 @@ export type PhotoRef = { baseKey: string; width: number; height: number }
 // real size of the large one (what the database stores), which lets the browser
 // reserve the space before the photo arrives.
 //
-// The widths are those the sizes were made at (the same calculation the browser
-// used when the photo was added). Where two sizes came out equal (a small
+// The widths are those the sizes were made at: the same calculation the browser
+// used when the photo was added. The server only accepts files whose sizes match
+// that calculation (give or take a pixel), so the widths listed here are true. Where two sizes came out equal (a small
 // original is never enlarged), the width is listed once, with the larger name.
 export function photoSources(base: string, photo: PhotoRef) {
   const computed = computeSizes(photo.width, photo.height)

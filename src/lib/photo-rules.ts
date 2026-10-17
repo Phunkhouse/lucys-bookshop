@@ -14,8 +14,10 @@ export const MAX_LONG_EDGE: Record<Rendition, number> = {
   large: 1600,
 }
 
-// The three sizes must show the same picture: proportions within 2%.
-export const ASPECT_TOLERANCE = 0.02
+// Each size must be what the shared calculation (computeSizes) gives for the
+// large one, give or take a pixel for rounding. The shop writes each photo's
+// srcset from that calculation, so the files have to match it.
+export const SIZE_TOLERANCE_PX = 1
 
 // Photos more extreme than 4:1 either way are refused. At such shapes, rounding
 // to whole pixels could break the proportion check above.

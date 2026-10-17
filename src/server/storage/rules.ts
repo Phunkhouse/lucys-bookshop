@@ -5,7 +5,7 @@ import type { Rendition } from '@/lib/photo-rules'
 
 // The numbers shared with the browser live in src/lib/photo-rules.ts.
 export {
-  ASPECT_TOLERANCE,
+  SIZE_TOLERANCE_PX,
   MAX_FILE_BYTES,
   MAX_LONG_EDGE,
   RENDITIONS,

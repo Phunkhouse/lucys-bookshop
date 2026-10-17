@@ -218,3 +218,87 @@ describe('verifyFinalPhoto', () => {
     expect(await finalReason()).toBe(expected)
   })
 })
+
+// The shop writes each photo's srcset from the sizes the browser's calculation
+// gives (computeSizes). So the server must not accept sizes that differ from
+// them: a 15 px "thumb" beside a 1200 px large would be sold as 360 px wide.
+// A pixel of leeway covers rounding.
+describe('verifyUpload: the sizes must be the ones the browser calculates', () => {
+  it('rejects a tiny thumb and medium next to a large photo, even with the right proportions', async () => {
+    stageUpload(storage, ID, {
+      thumb: { width: 15, height: 20 },
+      medium: { width: 30, height: 40 },
+    })
+
+    expect(await reason()).toBe('bad_dimensions')
+  })
+
+  it('rejects a medium that is much smaller than it should be', async () => {
+    stageUpload(storage, ID, { medium: { width: 400, height: 533 } })
+
+    expect(await reason()).toBe('bad_dimensions')
+  })
+
+  it('does the same for a landscape photo', async () => {
+    stageUpload(storage, ID, {
+      thumb: { width: 480, height: 360 },
+      medium: { width: 700, height: 525 },
+      large: { width: 1600, height: 1200 },
+    })
+
+    expect(await reason()).toBe('bad_dimensions')
+  })
+
+  it('wants every size of a small photo to be as large as the photo, since nothing is shrunk below the limit', async () => {
+    stageUpload(storage, ID, {
+      thumb: { width: 150, height: 200 },
+      medium: { width: 300, height: 400 },
+      large: { width: 300, height: 400 },
+    })
+
+    expect(await reason()).toBe('bad_dimensions')
+  })
+
+  it.each([
+    ['1 px wider', { width: 361, height: 480 }],
+    ['1 px narrower', { width: 359, height: 480 }],
+    ['1 px lower and narrower', { width: 359, height: 479 }],
+    ['1 px wider and lower', { width: 361, height: 479 }],
+  ])(
+    'accepts a thumb that is %s than calculated (rounding)',
+    async (_name, size) => {
+      stageUpload(storage, ID, { thumb: size })
+
+      expect((await verifyUpload(storage, ID)).ok).toBe(true)
+    },
+  )
+
+  it.each([
+    ['2 px wider', { width: 362, height: 480 }],
+    ['2 px narrower', { width: 358, height: 477 }],
+    ['3 px lower', { width: 360, height: 477 }],
+  ])('rejects a thumb that is %s than calculated', async (_name, size) => {
+    stageUpload(storage, ID, { thumb: size })
+
+    expect(await reason()).toBe('bad_dimensions')
+  })
+
+  it('applies the same leeway to the medium size', async () => {
+    stageUpload(storage, ID, { medium: { width: 721, height: 959 } })
+    expect((await verifyUpload(storage, ID)).ok).toBe(true)
+
+    stageUpload(storage, ID, { medium: { width: 718, height: 957 } })
+    expect(await reason()).toBe('bad_dimensions')
+  })
+
+  it('applies to the files already in place too', async () => {
+    putFinalPhoto(storage, 'books/b1/i1', {
+      thumb: { width: 15, height: 20 },
+      medium: { width: 30, height: 40 },
+    })
+
+    const result = await verifyFinalPhoto(storage, 'books/b1/i1')
+
+    expect(result).toEqual({ ok: false, reason: 'bad_dimensions' })
+  })
+})

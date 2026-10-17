@@ -1,7 +1,8 @@
+import { computeSizes } from '@/lib/photo-sizes'
 import { readJpegSize } from './jpeg'
 import type { ObjectStorage } from './object-storage'
 import {
-  ASPECT_TOLERANCE,
+  SIZE_TOLERANCE_PX,
   MAX_FILE_BYTES,
   MAX_LONG_EDGE,
   RENDITIONS,
@@ -73,18 +74,17 @@ async function verifyRenditions(
     sizes[rendition] = size
   }
 
-  const longEdge = (r: Rendition) => Math.max(sizes[r].width, sizes[r].height)
-  if (
-    longEdge('thumb') > longEdge('medium') ||
-    longEdge('medium') > longEdge('large')
-  ) {
-    return fail('bad_dimensions')
-  }
-  const aspect = (r: Rendition) => sizes[r].width / sizes[r].height
+  // The shop writes each photo's srcset from the sizes the browser's calculation
+  // gives, so the files must be those sizes (a pixel of leeway for rounding).
+  // This also covers the order of the sizes and their proportions.
+  const expected = computeSizes(sizes.large.width, sizes.large.height)
+  if (!expected.ok) return fail('bad_dimensions')
   for (const rendition of ['thumb', 'medium'] as const) {
+    const want = expected.sizes[rendition]
+    const got = sizes[rendition]
     if (
-      Math.abs(aspect(rendition) - aspect('large')) / aspect('large') >
-      ASPECT_TOLERANCE
+      Math.abs(got.width - want.width) > SIZE_TOLERANCE_PX ||
+      Math.abs(got.height - want.height) > SIZE_TOLERANCE_PX
     ) {
       return fail('bad_dimensions')
     }
