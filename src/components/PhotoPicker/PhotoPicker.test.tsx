@@ -1,6 +1,16 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
+import { NextIntlClientProvider } from 'next-intl'
+import { StrictMode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithIntl } from '@/lib/render-with-intl'
+import messages from '../../../messages/cs.json'
 import { PhotoPicker } from './PhotoPicker'
 
 type Outcome =
@@ -312,5 +322,58 @@ describe('PhotoPicker: failures', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Odstranit fotku 1' }))
 
     expect(state()).toMatchObject({ entries: [], busy: false, failed: false })
+  })
+})
+
+describe('PhotoPicker: leaving the page', () => {
+  it('stops the running upload and does not start the queued ones when it is removed', async () => {
+    const { unmount } = renderPicker()
+    pick('a.jpg', 'b.jpg', 'c.jpg')
+    expect(upload).toHaveBeenCalledTimes(1)
+
+    unmount()
+    expect(pending[0].signal.aborted).toBe(true)
+    // The aborted upload ends; the queue must not carry on without anyone there.
+    await act(async () =>
+      pending[0].resolve({ ok: false, error: 'uploadFailed' }),
+    )
+    await act(async () => {})
+
+    expect(upload).toHaveBeenCalledTimes(1)
+  })
+
+  it('stops the next photo too, when it is removed right after the first one finished', async () => {
+    const { unmount } = renderPicker()
+    pick('a.jpg', 'b.jpg')
+    await finish(0, ready('u1'))
+    await waitFor(() => expect(pending).toHaveLength(2)) // the second is running now
+
+    unmount()
+
+    expect(pending[1].signal.aborted).toBe(true)
+  })
+
+  // React's development mode mounts, removes and mounts a component again. The
+  // "removed" state must not stick, or the picker would never upload anything
+  // there. StrictMode has to be the outermost wrapper for React to do this.
+  it('still uploads after React mounts it twice in development', async () => {
+    render(
+      <StrictMode>
+        <NextIntlClientProvider locale="cs" messages={messages}>
+          <PhotoPicker
+            initialPhotos={existing(0)}
+            upload={upload}
+            onChange={onChange}
+          />
+        </NextIntlClientProvider>
+      </StrictMode>,
+    )
+
+    pick('a.jpg')
+    await finish(0, ready('u1'))
+
+    await waitFor(() =>
+      expect(state().entries).toEqual([{ kind: 'new', uploadId: 'u1' }]),
+    )
   })
 })

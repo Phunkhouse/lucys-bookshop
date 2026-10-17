@@ -74,6 +74,7 @@ export function PhotoPicker({
   const running = useRef(false)
   const cancelled = useRef(new Set<string>())
   const controllers = useRef(new Map<string, AbortController>())
+  const unmounted = useRef(false)
   const buttons = useRef(new Map<string, HTMLButtonElement>())
   const focusRequest = useRef<{ key: string; direction: Direction } | null>(
     null,
@@ -107,9 +108,17 @@ export function PhotoPicker({
     button?.focus()
   }, [tiles])
 
+  // When the form is left: stop the upload that is running and forget the ones
+  // still waiting, so nothing carries on in the background (battery, data,
+  // upload tickets). React's development mode mounts a component twice, so a
+  // mount clears the mark again.
   useEffect(() => {
+    unmounted.current = false
     const active = controllers.current
+    const waiting = queue.current
     return () => {
+      unmounted.current = true
+      waiting.length = 0
       for (const controller of active.values()) controller.abort()
     }
   }, [])
@@ -118,7 +127,7 @@ export function PhotoPicker({
     if (running.current) return
     running.current = true
     try {
-      while (queue.current.length > 0) {
+      while (queue.current.length > 0 && !unmounted.current) {
         const { key, file } = queue.current.shift()!
         if (cancelled.current.has(key)) continue
 
