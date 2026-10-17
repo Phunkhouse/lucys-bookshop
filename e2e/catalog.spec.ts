@@ -56,7 +56,9 @@ test.describe('book detail', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: 'Stíny nad Vltavou' }),
     ).toBeVisible()
-    await expect(page.getByText('Marta Hrubešová')).toBeVisible()
+    await expect(
+      page.getByText('Marta Hrubešová', { exact: true }),
+    ).toBeVisible()
     await expect(
       page.getByRole('button', { name: 'Přidat do košíku' }),
     ).toBeDisabled()
