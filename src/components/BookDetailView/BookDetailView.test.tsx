@@ -1,8 +1,14 @@
 import { screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { renderWithIntl } from '@/lib/render-with-intl'
 import type { BookDetail } from '@/server/catalog'
 import { BookDetailView } from './BookDetailView'
+
+// The carousel needs a real browser; here it never starts, which is enough to
+// see what the page puts into it.
+vi.mock('embla-carousel-react', () => ({
+  default: () => [() => {}, undefined],
+}))
 
 const BASE = 'https://pub-abc.r2.dev'
 
@@ -120,45 +126,43 @@ describe('BookDetailView', () => {
         <BookDetailView book={{ ...book, images }} imageBaseUrl={BASE} />,
       )
 
-    it('shows several photos as a list, each described by the title and its place', () => {
+    it('shows several photos in a carousel, each described by the title and its place', () => {
       render()
 
-      const list = screen.getByRole('list', { name: 'Fotky knihy' })
-      const items = within(list).getAllByRole('listitem')
-      expect(items).toHaveLength(3)
+      const region = screen.getByRole('region', { name: 'Fotky knihy' })
+      const slides = within(region).getAllByRole('group', {
+        name: /^Fotka \d z 3$/,
+      })
+      expect(slides).toHaveLength(3)
       expect(
-        items.map((item) => item.querySelector('img')?.getAttribute('alt')),
+        slides.map((slide) =>
+          within(slide).getByRole('img').getAttribute('alt'),
+        ),
       ).toEqual([
         'Stíny nad Vltavou – fotka 1 z 3',
         'Stíny nad Vltavou – fotka 2 z 3',
         'Stíny nad Vltavou – fotka 3 z 3',
       ])
-      expect(screen.getByText('Fotka 2 z 3')).toBeTruthy()
       expect(screen.queryByText('Fotografie brzy')).toBeNull()
     })
 
-    it('can be scrolled with the keyboard when there are several', () => {
+    it('keeps the counter outside the photos, and moves nothing with them', () => {
       render()
 
-      expect(
-        screen
-          .getByRole('list', { name: 'Fotky knihy' })
-          .getAttribute('tabindex'),
-      ).toBe('0')
+      // One counter, in the controls below the photos.
+      expect(screen.getAllByText('Fotka 1 z 3')).toHaveLength(1)
+      expect(screen.queryByText('Fotka 2 z 3')).toBeNull()
+      expect(screen.getByRole('button', { name: 'Další fotka' })).toBeTruthy()
     })
 
-    it('shows one photo with just the title as its description, no caption and nothing to scroll', () => {
+    it('shows one photo with just the title as its description and nothing to page through', () => {
       const { container } = render([photos[0]])
 
       expect(container.querySelector('img')?.getAttribute('alt')).toBe(
         'Stíny nad Vltavou',
       )
-      expect(screen.queryByText(/^Fotka 1 z 1$/)).toBeNull()
-      expect(
-        screen
-          .getByRole('list', { name: 'Fotky knihy' })
-          .hasAttribute('tabindex'),
-      ).toBe(false)
+      expect(screen.queryByRole('region', { name: 'Fotky knihy' })).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Další fotka' })).toBeNull()
     })
 
     it('loads the first photo at once with high priority, and the others lazily', () => {
@@ -174,11 +178,11 @@ describe('BookDetailView', () => {
       expect(images[1].hasAttribute('fetchpriority')).toBe(false)
     })
 
-    it('keeps the placeholder, and no list, for a book without photos', () => {
+    it('keeps the placeholder, and no carousel, for a book without photos', () => {
       const { container } = render([])
 
       expect(screen.getByText('Fotografie brzy')).toBeTruthy()
-      expect(screen.queryByRole('list', { name: 'Fotky knihy' })).toBeNull()
+      expect(screen.queryByRole('region', { name: 'Fotky knihy' })).toBeNull()
       expect(container.querySelector('img')).toBeNull()
     })
   })

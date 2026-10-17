@@ -27,60 +27,6 @@
   text-align: center;
 }
 
-// The photos sit in a row and snap into place when swiped. Each one is shown
-// whole, never cropped.
-.gallery {
-  display: flex;
-  gap: var(--space-3);
-  min-width: 0;
-  padding: 0;
-  overflow-x: auto;
-  list-style: none;
-  scroll-snap-type: x mandatory;
-
-  &:focus-visible {
-    outline: var(--focus-width) solid var(--color-focus);
-    outline-offset: 2px;
-  }
-
-  // On a touch screen the scrollbar floats over the bottom of the strip, on top
-  // of the caption. Swiping needs no bar, and the caption says how many photos
-  // there are. With a mouse the bar stays: it is the way to scroll there.
-  @media (hover: none) and (pointer: coarse) {
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-}
-
-.slide {
-  flex: 0 0 100%;
-  scroll-snap-align: start;
-}
-
-.figure {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: 0;
-
-  figcaption {
-    color: var(--color-muted);
-    font-size: var(--font-size-sm);
-  }
-}
-
-.photo {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 80vh;
-  object-fit: contain;
-  border: var(--border-width) solid var(--color-border);
-}
-
 .info {
   display: flex;
   flex-direction: column;

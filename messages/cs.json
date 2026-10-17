@@ -55,8 +55,12 @@
     },
     "photos": {
       "galleryLabel": "Fotky knihy",
-      "caption": "Fotka {n} z {total}",
-      "alt": "{title} – fotka {n} z {total}"
+      "place": "Fotka {n} z {total}",
+      "alt": "{title} – fotka {n} z {total}",
+      "previous": "Předchozí",
+      "next": "Další",
+      "previousLabel": "Předchozí fotka",
+      "nextLabel": "Další fotka"
     }
   },
   "NotFound": {

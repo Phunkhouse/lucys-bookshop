@@ -1,6 +1,6 @@
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
 import { Badge } from '@/components/Badge'
-import { BookPhoto } from '@/components/BookPhoto'
+import { PhotoGallery } from '@/components/PhotoGallery'
 import { Link } from '@/i18n/navigation'
 import type { BookDetail } from '@/server/catalog'
 import css from './BookDetailView.module.scss'
@@ -47,40 +47,12 @@ export function BookDetailView({ book, imageBaseUrl }: BookDetailViewProps) {
 
       <div className={css.layout}>
         {book.images.length > 0 ? (
-          // Photos side by side, swiped through on a phone (scroll-snap). A list
-          // that scrolls needs a tab stop so a keyboard can reach it.
-          <ul
-            role="list"
-            className={css.gallery}
-            aria-label={t('photos.galleryLabel')}
-            tabIndex={book.images.length > 1 ? 0 : undefined}
-          >
-            {book.images.map((photo, index) => {
-              const many = book.images.length > 1
-              const place = { n: index + 1, total: book.images.length }
-              return (
-                <li key={photo.baseKey} className={css.slide}>
-                  <figure className={css.figure}>
-                    <BookPhoto
-                      photo={photo}
-                      baseUrl={imageBaseUrl}
-                      alt={
-                        many
-                          ? t('photos.alt', { title: book.title, ...place })
-                          : book.title
-                      }
-                      sizes={PHOTO_SIZES}
-                      priority={index === 0}
-                      className={css.photo}
-                    />
-                    {many && (
-                      <figcaption>{t('photos.caption', place)}</figcaption>
-                    )}
-                  </figure>
-                </li>
-              )
-            })}
-          </ul>
+          <PhotoGallery
+            photos={book.images}
+            title={book.title}
+            imageBaseUrl={imageBaseUrl}
+            sizes={PHOTO_SIZES}
+          />
         ) : (
           <div className={css.cover}>{t('noPhoto')}</div>
         )}
