@@ -55,6 +55,7 @@ export function describeStorageContract(
       expect(await target.storage.head(`${prefix}/a.jpg`)).toEqual({
         size: 5,
         contentType: 'image/jpeg',
+        cacheControl: null,
       })
     })
 
@@ -90,11 +91,30 @@ export function describeStorageContract(
       expect(await target.storage.head(`${prefix}/to.jpg`)).toEqual({
         size: 3,
         contentType: 'image/jpeg',
+        cacheControl: null,
       })
       expect(await target.storage.readRange(`${prefix}/to.jpg`, 0, 2)).toEqual(
         bytes(9, 8, 7),
       )
       expect(await target.storage.head(`${prefix}/from.jpg`)).not.toBeNull()
+    })
+
+    it('can set Cache-Control on the copy, keeping the bytes and the content type', async () => {
+      await put(`${prefix}/src.jpg`, bytes(4, 5, 6))
+      const cacheControl = 'public, max-age=31536000, immutable'
+
+      await target.storage.copy(`${prefix}/src.jpg`, `${prefix}/cached.jpg`, {
+        cacheControl,
+      })
+
+      expect(await target.storage.head(`${prefix}/cached.jpg`)).toEqual({
+        size: 3,
+        contentType: 'image/jpeg',
+        cacheControl,
+      })
+      expect(
+        await target.storage.readRange(`${prefix}/cached.jpg`, 0, 2),
+      ).toEqual(bytes(4, 5, 6))
     })
 
     it('fails to copy an object that does not exist', async () => {

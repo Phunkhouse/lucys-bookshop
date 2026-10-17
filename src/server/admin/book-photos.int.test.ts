@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { asc, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { testActor } from '@/server/auth/test-helpers'
+import { computeSizes } from '@/lib/photo-sizes'
 import { listCatalog } from '@/server/catalog'
 import { db } from '@/server/db/client'
 import { bookImages, books } from '@/server/db/schema'
@@ -33,13 +34,13 @@ beforeEach(async () => {
   storage = new FakeObjectStorage()
 })
 
-// Three sizes of the same 3:4 photo, scaled so each upload has its own width.
+// The three sizes a browser makes of a 3:4 photo that is `largeWidth` wide: the
+// same calculation, so the test photos are ones that can really exist.
 function stage(largeWidth = 1200) {
   const uploadId = randomUUID()
-  const large = { width: largeWidth, height: (largeWidth * 4) / 3 }
-  const medium = { width: largeWidth * 0.6, height: (largeWidth * 0.6 * 4) / 3 }
-  const thumb = { width: largeWidth * 0.3, height: (largeWidth * 0.3 * 4) / 3 }
-  stageUpload(storage, uploadId, { large, medium, thumb })
+  const computed = computeSizes(largeWidth, (largeWidth * 4) / 3)
+  if (!computed.ok) throw new Error('expected sizes')
+  stageUpload(storage, uploadId, computed.sizes)
   return uploadId
 }
 
@@ -103,6 +104,18 @@ describe('creating a book with photos', () => {
         .sort(),
     )
     expect(stagingKeys()).toEqual([])
+  })
+
+  it('puts every saved file in place with Cache-Control for a year, "immutable"', async () => {
+    const { photos } = await createWithPhotos([1200, 600])
+
+    for (const photo of photos) {
+      for (const name of ['thumb', 'medium', 'large']) {
+        expect(
+          (await storage.head(`${photo.baseKey}/${name}.jpg`))?.cacheControl,
+        ).toBe('public, max-age=31536000, immutable')
+      }
+    }
   })
 
   it('makes the first photo the cover in the shop', async () => {
@@ -354,6 +367,27 @@ describe('editing photos', () => {
     )
     expect(stagingKeys()).toEqual([])
     expect(finalKeys()).toHaveLength(9)
+  })
+
+  // Browsers may keep a photo for a year because an address never gets other
+  // content: a changed photo is a new file at a new address.
+  it('never reuses an address: a replacement lives elsewhere and the old files are gone', async () => {
+    const { actor, id, photos } = await createWithPhotos([1200])
+    const oldKey = photos[0].baseKey
+
+    await updateListing(
+      actor,
+      id,
+      { ...form, photos: [newPhoto(stage(900))] },
+      { storage },
+    )
+
+    const [row] = await rowsOf(id)
+    expect(row.baseKey).not.toBe(oldKey)
+    expect(row.baseKey.startsWith(`books/${id}/`)).toBe(true)
+    expect(storage.keys().some((key) => key.startsWith(`${oldKey}/`))).toBe(
+      false,
+    )
   })
 
   it('refuses a photo that belongs to another book, or does not exist, and changes nothing', async () => {

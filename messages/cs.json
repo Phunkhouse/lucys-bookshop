@@ -52,6 +52,15 @@
         "genres": "Žánry",
         "isbn": "ISBN"
       }
+    },
+    "photos": {
+      "galleryLabel": "Fotky knihy",
+      "place": "Fotka {n} z {total}",
+      "alt": "{title} – fotka {n} z {total}",
+      "previous": "Předchozí",
+      "next": "Další",
+      "previousLabel": "Předchozí fotka",
+      "nextLabel": "Další fotka"
     }
   },
   "NotFound": {

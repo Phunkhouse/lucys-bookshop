@@ -11,16 +11,23 @@ export interface ObjectStorage {
     expiresInSeconds: number
   }): Promise<string>
 
-  // Size and type of an object, or null when it is not there.
-  head(
-    key: string,
-  ): Promise<{ size: number; contentType: string | null } | null>
+  // Size, type and Cache-Control of an object, or null when it is not there.
+  head(key: string): Promise<{
+    size: number
+    contentType: string | null
+    cacheControl: string | null
+  } | null>
 
   // Bytes start..end, both included. Stops at the end of the object.
   readRange(key: string, start: number, end: number): Promise<Uint8Array>
 
-  // Copies within the bucket. Fails when the source does not exist.
-  copy(fromKey: string, toKey: string): Promise<void>
+  // Copies within the bucket, keeping the content type. With `cacheControl`, the
+  // copy carries that header. Fails when the source does not exist.
+  copy(
+    fromKey: string,
+    toKey: string,
+    options?: { cacheControl?: string },
+  ): Promise<void>
 
   // Missing keys are not an error.
   deleteMany(keys: string[]): Promise<void>

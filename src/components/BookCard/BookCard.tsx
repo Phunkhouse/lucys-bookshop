@@ -1,15 +1,23 @@
 import { useFormatter, useTranslations } from 'next-intl'
 import { Badge } from '@/components/Badge'
+import { BookPhoto } from '@/components/BookPhoto'
 import { Link } from '@/i18n/navigation'
 import { bookPath } from '@/lib/book-path'
 import type { CatalogItem } from '@/server/catalog'
 import css from './BookCard.module.scss'
 
+// The card is 260 to about 280 px wide on a large screen, half the screen on a
+// medium one, and the full width on a phone.
+const COVER_SIZES = '(min-width: 1200px) 280px, (min-width: 560px) 50vw, 100vw'
+
 type BookCardProps = {
   book: CatalogItem
+  imageBaseUrl: string
+  // One of the first cards on the page: its cover loads at once.
+  priority?: boolean
 }
 
-export function BookCard({ book }: BookCardProps) {
+export function BookCard({ book, imageBaseUrl, priority }: BookCardProps) {
   const t = useTranslations('Book')
   const tGenres = useTranslations('Genres')
   const format = useFormatter()
@@ -26,8 +34,21 @@ export function BookCard({ book }: BookCardProps) {
 
   return (
     <article className={css.card}>
-      {/* Photos arrive with the upload pipeline (M2). Until then every book gets the placeholder. */}
-      <div className={css.cover}>{t('noPhoto')}</div>
+      <div className={css.cover}>
+        {book.cover ? (
+          // Empty alt: the title link below already names the book.
+          <BookPhoto
+            photo={book.cover}
+            baseUrl={imageBaseUrl}
+            alt=""
+            sizes={COVER_SIZES}
+            priority={priority}
+            className={css.coverImage}
+          />
+        ) : (
+          t('noPhoto')
+        )}
+      </div>
       <div className={css.body}>
         {book.status !== 'available' && (
           <p>

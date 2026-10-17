@@ -5,7 +5,12 @@ import { db } from '@/server/db/client'
 import { bookImages } from '@/server/db/schema'
 import type { ObjectStorage } from '@/server/storage/object-storage'
 import { removeImages } from '@/server/storage/remove-images'
-import { RENDITIONS, finalKey, stagingKey } from '@/server/storage/rules'
+import {
+  PHOTO_CACHE_CONTROL,
+  RENDITIONS,
+  finalKey,
+  stagingKey,
+} from '@/server/storage/rules'
 import { verifyFinalPhoto, verifyUpload } from '@/server/storage/verify-upload'
 
 export type StoredPhoto = {
@@ -122,6 +127,7 @@ export async function copyNewPhotos(
         await storage.copy(
           stagingKey(planned.uploadId, rendition),
           finalKey(planned.photo.baseKey, rendition),
+          { cacheControl: PHOTO_CACHE_CONTROL },
         )
       }
     }

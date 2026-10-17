@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import { connection } from 'next/server'
 import { BookCard } from '@/components/BookCard'
+import { env } from '@/config/env'
 import { shopConfig } from '@/config/shop'
 import { listCatalog } from '@/server/catalog'
 import css from './page.module.scss'
@@ -29,9 +30,14 @@ export default async function Home() {
           <>
             <p>{t('Catalog.count', { count: books.length })}</p>
             <ul className={css.grid}>
-              {books.map((book) => (
+              {books.map((book, index) => (
                 <li key={book.shortId}>
-                  <BookCard book={book} />
+                  {/* The first cards are on screen at once: their covers load first. */}
+                  <BookCard
+                    book={book}
+                    imageBaseUrl={env.IMAGE_BASE_URL}
+                    priority={index < 4}
+                  />
                 </li>
               ))}
             </ul>
