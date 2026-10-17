@@ -1,19 +1,17 @@
 // The rules for photo uploads (spec 6.9 and 10). The browser makes three sizes
 // of every photo; the server checks them against these numbers.
 
-export const RENDITIONS = ['thumb', 'medium', 'large'] as const
-export type Rendition = (typeof RENDITIONS)[number]
+import type { Rendition } from '@/lib/photo-rules'
 
-export const MAX_FILE_BYTES = 2 * 1024 * 1024
-// Longest edge of each size, in pixels. A smaller original is not upscaled, so
-// smaller is fine.
-export const MAX_LONG_EDGE: Record<Rendition, number> = {
-  thumb: 480,
-  medium: 960,
-  large: 1600,
-}
-// The three sizes must show the same picture: proportions within 2%.
-export const ASPECT_TOLERANCE = 0.02
+// The numbers shared with the browser live in src/lib/photo-rules.ts.
+export {
+  ASPECT_TOLERANCE,
+  MAX_FILE_BYTES,
+  MAX_LONG_EDGE,
+  RENDITIONS,
+  type Rendition,
+} from '@/lib/photo-rules'
+
 // A presigned upload permission is valid for 10 minutes.
 export const UPLOAD_TTL_SECONDS = 600
 

@@ -1,0 +1,120 @@
+@use 'utilities' as *;
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hint,
+.counter {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(rem(160), 1fr));
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+}
+
+.tileTitle {
+  font-weight: 700;
+}
+
+.preview,
+.placeholder {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  background: var(--color-bg);
+  border: var(--border-width) solid var(--color-border);
+}
+
+.placeholder {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 8px,
+    var(--color-border) 8px,
+    var(--color-border) 9px
+  );
+}
+
+.state {
+  font-size: var(--font-size-sm);
+}
+
+.error {
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+// Every action is a large, clearly outlined button.
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: rem(48);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible,
+  &:focus-within {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  &[aria-disabled='true'] {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.add {
+  align-self: flex-start;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+
+  &[aria-disabled='true'] {
+    background: var(--color-bg);
+    color: var(--color-muted);
+  }
+}
+
+// The real file input is hidden; its label is the button, and the label
+// shows the focus.
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.status {
+  min-height: 1.2em;
+  font-size: var(--font-size-sm);
+}
