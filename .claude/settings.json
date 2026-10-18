@@ -4,8 +4,16 @@
       "Bash(gh pr create *)",
       "Bash(gh pr view *)",
       "Bash(gh pr checks *)",
-      "Bash(gh run view *)"
+      "Bash(gh run view *)",
+      "Bash(gh api repos/Phunkhouse/lucys-bookshop/pulls/*/comments)",
+      "Bash(gh api repos/Phunkhouse/lucys-bookshop/pulls/*/reviews)",
+      "Bash(gh api repos/Phunkhouse/lucys-bookshop/issues/*/comments)"
     ],
-    "deny": ["Bash(gh pr merge *)", "Bash(gh api *)", "Bash(gh secret *)"]
+    "deny": [
+      "Bash(gh pr merge *)",
+      "Bash(gh secret *)",
+      "Bash(gh api * -X *)",
+      "Bash(gh api * --method *)"
+    ]
   }
 }

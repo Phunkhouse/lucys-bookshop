@@ -182,6 +182,20 @@ describe('reserveBooks', () => {
     ).rejects.toThrow()
   })
 
+  it('accepts uuids in capitals and counts a mixed-case repeat as one book', async () => {
+    const order = await createOrder()
+    const book = await createBook()
+
+    await reserveInTransaction(
+      [book.id.toUpperCase(), book.id.toLowerCase()],
+      order.id,
+    )
+
+    const row = await load(book.id)
+    expect(row.status).toBe('reserved')
+    expect(row.reservedByOrderId).toBe(order.id)
+  })
+
   it('rolls back with the caller: a failure after reserving frees the book again', async () => {
     const order = await createOrder()
     const book = await createBook()

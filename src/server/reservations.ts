@@ -52,7 +52,12 @@ export async function reserveBooks(
   tx: DbTransaction,
   input: { bookIds: string[]; orderId: string; now: Date },
 ): Promise<{ reservedUntil: Date }> {
-  const ids = [...new Set(bookIds.parse(input.bookIds))].sort()
+  // Postgres matches uuids case-insensitively but returns them in lowercase, so
+  // canonicalize first: otherwise "ABC..." is reported missing and "ABC..." plus
+  // "abc..." counts as two books.
+  const ids = [
+    ...new Set(bookIds.parse(input.bookIds).map((id) => id.toLowerCase())),
+  ].sort()
 
   const rows = await tx
     .select({
