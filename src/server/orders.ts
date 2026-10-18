@@ -36,10 +36,10 @@ export type PriceChange = {
   priceMinor: number
 }
 
-// The buyer must look at the cart again: a price moved after they saw it, or
-// Zásilkovna has no price yet. Nothing was written.
+// The buyer must look again: a book price or the shipping price moved after
+// they saw it, or Zásilkovna has no price yet. Nothing was written.
 export class PlaceOrderError extends Error {
-  readonly code: 'price_changed' | 'shipping_unavailable'
+  readonly code: 'price_changed' | 'shipping_changed' | 'shipping_unavailable'
   readonly priceChanges: PriceChange[]
 
   constructor(code: PlaceOrderError['code'], priceChanges: PriceChange[] = []) {
@@ -98,8 +98,14 @@ export async function placeOrder(
 
     const [shopSettings] = await tx.select().from(settings)
     const shippingMinor = shippingCostMinor(input.shippingMethod, shopSettings)
-    if (shippingMinor === null)
+    if (shippingMinor === null) {
       throw new PlaceOrderError('shipping_unavailable')
+    }
+    // Like a book price: what the buyer saw is only compared, the server's
+    // value is the one charged.
+    if (input.shippingMinorSeen !== shippingMinor) {
+      throw new PlaceOrderError('shipping_changed')
+    }
 
     const rows = await tx
       .select()

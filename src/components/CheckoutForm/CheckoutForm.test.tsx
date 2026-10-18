@@ -7,12 +7,15 @@ import type { CartValidation } from '@/server/cart'
 import type { CartLine } from '@/server/cart-rules'
 import { CheckoutForm } from './CheckoutForm'
 
-const { push } = vi.hoisted(() => ({ push: vi.fn() }))
+const { push, refresh } = vi.hoisted(() => ({
+  push: vi.fn(),
+  refresh: vi.fn(),
+}))
 vi.mock('@/i18n/navigation', async () => ({
   ...(await vi.importActual<typeof import('@/i18n/navigation')>(
     '@/i18n/navigation',
   )),
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, refresh }),
 }))
 
 beforeEach(() => {
@@ -277,6 +280,7 @@ describe('CheckoutForm', () => {
         shippingMethod: 'pickup',
         paymentMethod: 'cash_on_pickup',
         shippingDetails: '',
+        shippingMinorSeen: 0,
         acceptTerms: true,
         acceptPrivacy: true,
         website: '',
@@ -304,7 +308,56 @@ describe('CheckoutForm', () => {
         shippingMethod: 'zasilkovna',
         paymentMethod: 'bank_transfer',
         shippingDetails: 'Z-Box Praha 1, Dlouhá 5',
+        shippingMinorSeen: 8900,
       })
+    })
+
+    it('keeps a book added in another tab while the order was sending', async () => {
+      store(TWO_BOOKS)
+      let finish: (value: CheckoutResult) => void = () => {}
+      const submit = vi.fn(
+        () => new Promise<CheckoutResult>((resolve) => (finish = resolve)),
+      )
+      renderForm({ submit })
+      await ready()
+      fillContact()
+      tickConsents()
+      send()
+      await screen.findByRole('button', { name: 'Odesílám…' })
+
+      const added = { shortId: 'cccccc33', priceMinorSeen: 7000 }
+      store([...TWO_BOOKS, added])
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: CART_STORAGE_KEY }),
+      )
+      finish({ ok: true, publicToken: 'x' })
+
+      await waitFor(() => expect(push).toHaveBeenCalled())
+      expect(storedItems()).toEqual([added])
+    })
+
+    it('sends the shipping price it showed, and refreshes if the server says it moved', async () => {
+      store(TWO_BOOKS)
+      const submit = vi
+        .fn()
+        .mockResolvedValue({ ok: false, reason: 'shipping_changed' })
+      renderForm({ submit })
+      await ready()
+      fillContact()
+      tickConsents()
+      fireEvent.click(screen.getByLabelText(/^Zásilkovna/))
+      fireEvent.change(screen.getByLabelText('Výdejní místo Zásilkovny'), {
+        target: { value: 'Z-Box' },
+      })
+
+      send()
+
+      expect((await screen.findByRole('alert')).textContent).toContain(
+        'Cena dopravy se mezitím změnila.',
+      )
+      expect(submit.mock.calls[0][0].shippingMinorSeen).toBe(8900)
+      expect(refresh).toHaveBeenCalledTimes(1)
+      expect(storedItems()).toEqual(TWO_BOOKS)
     })
 
     it('sends once however often the button is pressed, and says it is working', async () => {

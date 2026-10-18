@@ -41,6 +41,7 @@ async function order(
       paymentMethod: 'bank_transfer',
       acceptTerms: true,
       acceptPrivacy: true,
+      shippingMinorSeen: 0,
       checkoutKey: `00000000-0000-4000-8000-${String(++keyCounter).padStart(12, '0')}`,
       ...overrides,
     },

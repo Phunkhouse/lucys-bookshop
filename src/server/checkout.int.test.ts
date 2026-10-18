@@ -34,6 +34,7 @@ function input(bookRows: BookRow[], overrides: Record<string, unknown> = {}) {
     paymentMethod: 'bank_transfer',
     acceptTerms: true,
     acceptPrivacy: true,
+    shippingMinorSeen: 0,
     checkoutKey: `00000000-0000-4000-8000-${String(++keyCounter).padStart(12, '0')}`,
     ...overrides,
   }
@@ -130,6 +131,7 @@ describe('submitCheckout', () => {
     const zasilkovna = input([book], {
       shippingMethod: 'zasilkovna',
       shippingDetails: 'Z-Box Praha 1',
+      shippingMinorSeen: 8900,
     })
     expect(await submitCheckout(zasilkovna, context())).toEqual({
       ok: false,
@@ -138,6 +140,21 @@ describe('submitCheckout', () => {
 
     await db.insert(settings).values({ zasilkovnaPriceMinor: 8900 })
     expect((await submitCheckout(zasilkovna, context())).ok).toBe(true)
+  })
+
+  it('answers "shipping_changed" when the shipping price moved', async () => {
+    await db.insert(settings).values({ zasilkovnaPriceMinor: 12900 })
+    const book = await createBook()
+    const stale = input([book], {
+      shippingMethod: 'zasilkovna',
+      shippingDetails: 'Z-Box Praha 1',
+      shippingMinorSeen: 8900,
+    })
+    expect(await submitCheckout(stale, context())).toEqual({
+      ok: false,
+      reason: 'shipping_changed',
+    })
+    expect(await db.select().from(orders)).toHaveLength(0)
   })
 
   it('returns the same link when the buyer clicks twice', async () => {

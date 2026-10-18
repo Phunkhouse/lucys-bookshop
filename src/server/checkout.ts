@@ -26,6 +26,7 @@ export type CheckoutResult =
   | { ok: false; reason: 'rate_limited'; retryAfterMs: number }
   | { ok: false; reason: 'unavailable' }
   | { ok: false; reason: 'price_changed' }
+  | { ok: false; reason: 'shipping_changed' }
   | { ok: false; reason: 'shipping_unavailable' }
 
 // The checkout entry point behind the server action: limit, validate, order.

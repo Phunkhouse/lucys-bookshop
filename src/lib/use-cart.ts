@@ -45,6 +45,5 @@ export function useCart() {
     remove: (shortId: string) => getStore().remove(shortId),
     acceptPrice: (shortId: string, priceMinorSeen: number) =>
       getStore().acceptPrice(shortId, priceMinorSeen),
-    clear: () => getStore().clear(),
   }
 }

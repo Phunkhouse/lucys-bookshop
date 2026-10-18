@@ -78,6 +78,7 @@ type Answer =
 type Failure =
   | 'unavailable'
   | 'price_changed'
+  | 'shipping_changed'
   | 'rate_limited'
   | 'shipping_unavailable'
   | 'invalid'
@@ -94,7 +95,7 @@ export function CheckoutForm({
   const t = useTranslations('Checkout')
   const money = useMoney()
   const router = useRouter()
-  const { items, clear } = useCart()
+  const { items, remove } = useCart()
   const [answer, setAnswer] = useState<Answer | null>(null)
   const [attempt, setAttempt] = useState(0)
   const [failure, setFailure] = useState<{ kind: Failure; minutes?: number }>()
@@ -128,12 +129,17 @@ export function CheckoutForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartKey, attempt])
 
+  // The shipping price on screen, which the server compares with its own.
+  const shippingSeen = (method: FormValues['shippingMethod']) =>
+    method === 'zasilkovna' ? (zasilkovnaPriceMinor ?? 0) : 0
+
   // The same check the server runs, so the buyer sees problems at once. The
   // server checks again.
   const resolver: Resolver<FormValues> = async (values) => {
     const result = checkoutInputSchema.safeParse({
       ...values,
       cart: items,
+      shippingMinorSeen: shippingSeen(values.shippingMethod),
       checkoutKey,
     })
     if (result.success) return { values, errors: {} }
@@ -173,11 +179,13 @@ export function CheckoutForm({
         shippingDetails:
           values.shippingMethod === 'zasilkovna' ? values.shippingDetails : '',
         cart: items,
+        shippingMinorSeen: shippingSeen(values.shippingMethod),
         checkoutKey,
       })
       if (result.ok) {
         setPlaced(true)
-        clear()
+        // Only what was ordered: a book added in another tab meanwhile stays.
+        for (const item of items) remove(item.shortId)
         router.push(`/order/${result.publicToken}`)
         return
       }
@@ -189,6 +197,8 @@ export function CheckoutForm({
         return
       }
       setFailure({ kind: result.reason })
+      // The page's shipping price is out of date: fetch it again.
+      if (result.reason === 'shipping_changed') router.refresh()
       // The cart is no longer what the buyer saw: look at it again.
       if (
         result.reason === 'unavailable' ||

@@ -44,6 +44,7 @@ function checkout(
     acceptTerms: true,
     acceptPrivacy: true,
     checkoutKey: newKey(),
+    shippingMinorSeen: 0,
     ...overrides,
   }
 }
@@ -111,6 +112,7 @@ describe('placeOrder', () => {
     await placeOrder(
       checkout([b], {
         shippingMethod: 'zasilkovna',
+        shippingMinorSeen: 8900,
         shippingDetails: '  Z-Box Praha 1  ',
       }),
       now,
@@ -130,6 +132,7 @@ describe('placeOrder', () => {
     const input = {
       ...checkout([book], {
         shippingMethod: 'zasilkovna',
+        shippingMinorSeen: 8900,
         shippingDetails: 'Z-Box',
       }),
       shippingCostMinor: 0,
@@ -140,10 +143,42 @@ describe('placeOrder', () => {
     expect(order.totalMinor).toBe(18900)
   })
 
+  it('stops when the shipping price changed after the buyer saw it', async () => {
+    await db.insert(settings).values({ zasilkovnaPriceMinor: 8900 })
+    const book = await createBook()
+    const input = checkout([book], {
+      shippingMethod: 'zasilkovna',
+      shippingDetails: 'Z-Box',
+      shippingMinorSeen: 8900,
+    })
+    await db.update(settings).set({ zasilkovnaPriceMinor: 12900 })
+
+    const error = await failureOf(placeOrder(input, now))
+
+    expect(error).toBeInstanceOf(PlaceOrderError)
+    expect((error as PlaceOrderError).code).toBe('shipping_changed')
+    expect(await db.select().from(orders)).toHaveLength(0)
+    expect((await load(book.id)).status).toBe('available')
+
+    // With the new price in hand the order goes through at that price.
+    await placeOrder({ ...input, shippingMinorSeen: 12900 }, now)
+    const [order] = await db.select().from(orders)
+    expect(order.shippingCostMinor).toBe(12900)
+  })
+
+  it('stops when the buyer saw a shipping price for pickup', async () => {
+    const book = await createBook()
+    const error = await failureOf(
+      placeOrder(checkout([book], { shippingMinorSeen: 8900 }), now),
+    )
+    expect((error as PlaceOrderError).code).toBe('shipping_changed')
+  })
+
   it('refuses Zásilkovna while the seller has set no price', async () => {
     const book = await createBook()
     const input = checkout([book], {
       shippingMethod: 'zasilkovna',
+      shippingMinorSeen: 8900,
       shippingDetails: 'Z-Box',
     })
 
@@ -165,6 +200,7 @@ describe('placeOrder', () => {
     await placeOrder(
       checkout([book], {
         shippingMethod: 'zasilkovna',
+        shippingMinorSeen: 8900,
         shippingDetails: 'Z-Box',
       }),
       now,
@@ -186,6 +222,7 @@ describe('placeOrder', () => {
       placeOrder(
         checkout([book], {
           shippingMethod: 'zasilkovna',
+          shippingMinorSeen: 8900,
           shippingDetails: 'Z-Box',
           paymentMethod: 'cash_on_pickup',
         }),
