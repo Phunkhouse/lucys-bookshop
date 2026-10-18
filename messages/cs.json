@@ -256,6 +256,44 @@
         "priceTooHigh": "Cena může být nejvýše 100 000 Kč.",
         "saveFailed": "Uložení se nepodařilo. Zkuste to prosím znovu."
       }
+    },
+    "orders": {
+      "link": "Objednávky",
+      "heading": "Objednávky",
+      "backToBooks": "Zpět na knihy",
+      "filterLabel": "Filtr podle stavu objednávky",
+      "filters": {
+        "all": "Vše",
+        "awaiting_payment": "Čekají na platbu",
+        "expired": "Vypršelé",
+        "paid": "Zaplacené",
+        "shipped": "Odeslané",
+        "completed": "Vyřízené",
+        "cancelled": "Zrušené",
+        "refunded": "Vrácené"
+      },
+      "stage": {
+        "awaiting_payment": "Čeká na platbu",
+        "expired": "Vypršelá",
+        "paid": "Zaplaceno",
+        "shipped": "Odesláno",
+        "completed": "Vyřízeno",
+        "cancelled": "Zrušeno",
+        "refunded": "Vráceno"
+      },
+      "payment": {
+        "bank_transfer": "Převodem",
+        "cash_on_pickup": "Hotově při převzetí"
+      },
+      "shipping": {
+        "pickup": "Osobní odběr",
+        "zasilkovna": "Zásilkovna"
+      },
+      "number": "Objednávka č. {number}",
+      "books": "{count, plural, one {# kniha} few {# knihy} many {# knihy} other {# knih}}",
+      "placed": "Zadáno {when}",
+      "expiringSoon": "Brzy vyprší",
+      "empty": "V tomto filtru nejsou žádné objednávky."
     }
   },
   "Checkout": {
