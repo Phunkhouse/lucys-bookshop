@@ -1,6 +1,6 @@
-# Used Books E-shop: Spec v12
+# Used Books E-shop: Spec v13
 
-Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04) and the M1 and M2 planning rounds (2026-10-08) are merged in. Sections that changed from v11 are marked **(v12)**; v11 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
+Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04), the M1 and M2 planning rounds (2026-10-08) and the domain purchase (2026-10-18) are merged in. Sections that changed from v12 are marked **(v13)**; v12 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
 
 ## 1. Purpose **(v11)**
 
@@ -43,8 +43,8 @@ Each listing is one physical copy:
 - **Two admin users with identical rights (v8):** the developer and the seller. There are no separate roles. The developer lists books at first, then hands the work to the seller and keeps access.
 - **Payment: QR bank transfer to the seller's Raiffeisenbank account, confirmed manually by the seller in admin; or cash on personal pickup.**
 - **Reservation window: 48 hours, expired reservations are released silently.**
-- **No custom domain for now.** The shop lives at a free `<name>.vercel.app` address.
-- **No emails to buyers in v1** (they need a verified sending domain). The seller contacts buyers herself. The seller is notified about new orders (see 6.8).
+- **Domain (v13):** `lucys-bookshop.cz` is bought. Until it is connected (M7), development and previews use the free `<name>.vercel.app` address.
+- **No emails to buyers in v1** (they need a verified sending domain, which the new domain makes possible later). The seller contacts buyers herself. The seller is notified about new orders (see 6.8).
 - Budget: free tiers only.
 - AI features are explicitly after v1; the architecture reserves nothing for them yet.
 
@@ -63,7 +63,7 @@ Each listing is one physical copy:
 
 ### Out of scope for v1 (planned later)
 
-- Custom domain and emails to buyers (confirmation, payment received, shipped)
+- Emails to buyers (confirmation, payment received, shipped); they need a verified sending domain on `lucys-bookshop.cz`
 - Automatic payment matching: CSV statement import first, Raiffeisenbank Premium API only if a personal account can use it
 - English UI content
 - Buyer registration, login, order history
@@ -169,7 +169,7 @@ Statuses: `pending_payment` → `paid` → `shipped` → `completed`, plus `canc
 - **To the seller:** new order or reservation (including cash on pickup), and the reservation-expiring reminder (about 24h after checkout, unpaid orders only, once per order).
 - Payment itself is seen in her bank app. The app cannot know about it until she marks it paid.
 - **Delivered by email to the seller's own address (v5)** through a `SellerNotifier` interface. The planned implementation uses a free provider's sandbox sender, which can deliver only to the email of the provider account owner, so the production provider account must be registered with her address (during development, notifications go to the developer's own address). To verify in a short spike at M5: reliability of the sandbox sender, spam-folder behavior, and a fallback (a single verified sender address on another free provider). A Telegram bot stays an option behind the same interface.
-- **Buyers receive no emails in v1.** An `EmailSender` interface is added later together with a custom domain and a verified sending domain.
+- **Buyers receive no emails in v1.** An `EmailSender` interface is added later, together with a verified sending domain on `lucys-bookshop.cz`.
 
 ### 6.9 Admin area **(v10)**
 
@@ -232,7 +232,7 @@ This is not legal advice.
 **Accounts and handover:**
 
 - Development runs on the developer's accounts. After testing, production moves to **accounts owned by the seller**, so her shop does not use the developer's free-tier limits. The developer keeps access (shared credentials in a password manager with 2FA where a service has no second-user option, invited membership elsewhere).
-- **No custom domain for now.** Create the production Vercel project in the seller's account with its final name and share only that address.
+- **Domain (v13):** `lucys-bookshop.cz` is bought; who is the registered owner must be settled before the handover (M8), and the registration should end up with the seller. It is connected to the production Vercel project in M7 (DNS, HTTPS, redirect from `www`). The `vercel.app` address is not shared with buyers.
 - **One public repository** in the developer's GitHub. Deployment to the seller's Vercel project runs from **GitHub Actions** with a deploy token from her account. Her secrets live in repository secrets.
 - Handover steps: Vercel (new project in her account via CI), Neon (restore a `pg_dump` into her project), Cloudflare R2 (copy objects and update the base URL env var), update secrets.
 - **Public repo hygiene:** seed data is invented books, never her real listings; no secrets, bank account number, or personal data in the repo.
@@ -278,7 +278,7 @@ Each milestone ends with a short written note on the design choices made and why
 
 ## 12. Later ideas **(v12)**
 
-- Custom domain, then buyer emails (confirmation with payment details, payment received, shipped) through a transactional email service
+- Buyer emails (confirmation with payment details, payment received, shipped) through a transactional email service, sending from `lucys-bookshop.cz`
 - CSV statement import, then Raiffeisenbank Premium API if available for her account type
 - Zásilkovna pickup-point widget and API
 - English content
@@ -307,7 +307,8 @@ Still open:
 
 **Later**
 
-- Final shop name, art direction, and the URL (`<name>.vercel.app`; the name must be available).
+- Art direction. The shop name and URL are settled (v13): `lucys-bookshop.cz`.
+- Domain registration owner (developer or seller), and the image address once the domain exists (a subdomain, or served by the app).
 - Zásilkovna flat price: the amount is set in admin before launch.
 
 ## 14. Decisions log
@@ -348,3 +349,4 @@ Still open:
 | 2026-10-16 | Only hidden books can be deleted, after a confirmation dialog; sold books are never deleted. Bulk delete is left for later                                                                                                                                                                                                                                                                           |
 | 2026-10-16 | Project conventions live in `AGENTS.md` (read by Codex and other agents); `CLAUDE.md` only imports it                                                                                                                                                                                                                                                                                                |
 | 2026-10-17 | Shop photos use a plain `<img>` with `srcset` of the three renditions instead of `next/image`; the book page shows photos in a carousel (drag, buttons, arrow keys, a counter that stays put; Embla Carousel); covers are cropped to 3:4 on cards; shared links carry the cover as Open Graph image; saved photos get a one-year immutable Cache-Control; AI-written alt texts wait for the SEO work |
+| 2026-10-18 | Shop name agreed and domain `lucys-bookshop.cz` bought; connected to production at M7, buyer emails still after v1; registration owner to settle before M8                                                                                                                                                                                                                                           |
