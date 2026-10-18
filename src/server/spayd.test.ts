@@ -25,11 +25,13 @@ describe('buildSpayd', () => {
     [29, '0.29'],
     [100000, '1000.00'],
     [99999999, '999999.99'],
+    [100_000_000, '1000000.00'],
+    [999_999_999, '9999999.99'],
   ])('writes %i minor units as %s', (amountMinor, expected) => {
     expect(buildSpayd({ ...base, amountMinor })).toContain(`*AM:${expected}*`)
   })
 
-  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 100_000_000])(
+  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 1_000_000_000])(
     'rejects the amount %s',
     (amountMinor) => {
       expect(() => buildSpayd({ ...base, amountMinor })).toThrow()

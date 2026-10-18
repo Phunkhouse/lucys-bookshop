@@ -10,7 +10,7 @@ export type SpaydInput = {
   message: string
 }
 
-const MAX_AMOUNT_MINOR = 99_999_999 // 999 999,99 Kč, the SPAYD amount field
+const MAX_AMOUNT_MINOR = 999_999_999 // 9 999 999,99 Kč: the AM field holds 10 characters
 const MESSAGE_MAX_LENGTH = 60
 
 export function normalizeIban(iban: string): string {
