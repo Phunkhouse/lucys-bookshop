@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isValidIban, normalizeIban } from '@/server/spayd'
 
 const databaseEnvSchema = z.object({
   DATABASE_URL: z.url(),
@@ -46,6 +47,16 @@ const envSchema = databaseEnvSchema
       .default('false')
       .transform((value) => value === 'true'),
     IMAGE_BASE_URL: imageBaseUrl,
+    // The seller's account for QR payments (spec 6.6). Never committed: set per
+    // environment. Optional so the shop still starts without it; a bank order
+    // then shows no payment details. It must be set before launch.
+    SELLER_IBAN: z
+      .string()
+      .optional()
+      .transform((value) => (value ? normalizeIban(value) : undefined))
+      .refine((value) => value === undefined || isValidIban(value), {
+        message: 'Must be a valid Czech IBAN (CZ and 22 digits)',
+      }),
   })
   .transform(({ BETTER_AUTH_URL, VERCEL_URL, ...rest }, ctx) => {
     const fromVercel =

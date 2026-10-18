@@ -1,0 +1,103 @@
+@use 'utilities' as *;
+
+.stage {
+  font-size: var(--font-size-lg);
+}
+
+.pay {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: rem(560);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+}
+
+// Big enough to scan from a screen, never wider than the column.
+.qr {
+  width: min(100%, rem(280));
+  height: auto;
+  border: var(--border-width) solid var(--color-border);
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+
+  div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-4);
+  }
+
+  dt {
+    color: var(--color-muted);
+  }
+
+  dd {
+    font-weight: 700;
+    // The numbers are meant to be copied: keep them selectable and unbroken.
+    overflow-wrap: anywhere;
+    user-select: all;
+  }
+}
+
+.notice {
+  font-weight: 700;
+}
+
+.hint {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.instructions {
+  padding: var(--space-3);
+  border: var(--border-width) dashed var(--color-border);
+}
+
+.instructionsTitle {
+  font-weight: 700;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: rem(560);
+}
+
+.lines {
+  padding: 0;
+  list-style: none;
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+}
+
+.total {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}

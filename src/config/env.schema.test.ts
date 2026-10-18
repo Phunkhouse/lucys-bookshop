@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { parseDatabaseEnv, parseEnv } from './env.schema'
+import {
+  breakChecksum,
+  groupIban,
+  makeIban,
+  TEST_IBAN,
+} from '@/server/test-iban'
 
 const valid = {
   DATABASE_URL: 'postgres://user:pass@127.0.0.1:5432/db',
@@ -19,6 +25,28 @@ describe('parseEnv', () => {
       STORAGE_REGION: 'auto',
       STORAGE_FORCE_PATH_STYLE: false,
     })
+  })
+
+  describe('SELLER_IBAN', () => {
+    it('is optional: the shop starts without it, bank orders then show no payment details', () => {
+      expect(parseEnv(valid).SELLER_IBAN).toBeUndefined()
+      expect(
+        parseEnv({ ...valid, SELLER_IBAN: '' }).SELLER_IBAN,
+      ).toBeUndefined()
+    })
+
+    it('accepts a Czech IBAN, also written with spaces', () => {
+      expect(
+        parseEnv({ ...valid, SELLER_IBAN: groupIban(TEST_IBAN) }).SELLER_IBAN,
+      ).toBe(TEST_IBAN)
+    })
+
+    it.each([breakChecksum(TEST_IBAN), makeIban('DE', '0'.repeat(18)), 'abc'])(
+      'refuses %s',
+      (SELLER_IBAN) => {
+        expect(() => parseEnv({ ...valid, SELLER_IBAN })).toThrow(/SELLER_IBAN/)
+      },
+    )
   })
 
   it('throws when DATABASE_URL is missing', () => {

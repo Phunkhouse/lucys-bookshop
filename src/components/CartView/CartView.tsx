@@ -227,15 +227,23 @@ export function CartView({ imageBaseUrl, validate }: CartViewProps) {
       </ul>
 
       {current?.kind === 'ok' && current.validation.lines.length > 0 && (
-        <p className={css.subtotal}>
-          <span>{t('subtotal')}</span>
-          <strong>
-            {money(
-              current.validation.subtotalMinor,
-              current.validation.currency,
-            )}
-          </strong>
-        </p>
+        <>
+          <p className={css.subtotal}>
+            <span>{t('subtotal')}</span>
+            <strong>
+              {money(
+                current.validation.subtotalMinor,
+                current.validation.currency,
+              )}
+            </strong>
+          </p>
+          {/* A changed price has to be accepted first, as checkout insists. */}
+          {current.validation.lines.every((line) => line.kind === 'ok') && (
+            <Link href="/checkout" className={css.checkout}>
+              {t('checkout')}
+            </Link>
+          )}
+        </>
       )}
     </>
   )
