@@ -1,3 +1,4 @@
+import { readFileSync, readdirSync } from 'node:fs'
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from './client'
@@ -41,6 +42,42 @@ describe('order_counters', () => {
     }
     expect(await next()).toBe(1)
     expect(await next()).toBe(2)
+  })
+})
+
+describe('the order counter backfill migration', () => {
+  // Runs the real migration file against orders that already exist.
+  const dir = readdirSync('drizzle').find((name) =>
+    name.endsWith('_seed_order_counters'),
+  )
+  const backfill = readFileSync(`drizzle/${dir}/migration.sql`, 'utf8')
+
+  it('starts every year at its highest used sequence', async () => {
+    await createOrder({ number: 20260001 })
+    await createOrder({ number: 20260007 })
+    await createOrder({ number: 20250123 })
+    await createOrder({ number: 42 }) // not in the YYYYNNNN shape: ignored
+
+    await db.execute(sql.raw(backfill))
+
+    const rows = await db.select().from(orderCounters)
+    expect(
+      rows.map((r) => [r.year, r.last]).sort((a, b) => a[0] - b[0]),
+    ).toEqual([
+      [2025, 123],
+      [2026, 7],
+    ])
+  })
+
+  it('does nothing without orders, and never lowers a counter', async () => {
+    await db.execute(sql.raw(backfill))
+    expect(await db.select().from(orderCounters)).toEqual([])
+
+    await db.insert(orderCounters).values({ year: 2026, last: 50 })
+    await createOrder({ number: 20260003 })
+    await db.execute(sql.raw(backfill))
+    const [row] = await db.select().from(orderCounters)
+    expect(row.last).toBe(50)
   })
 })
 
