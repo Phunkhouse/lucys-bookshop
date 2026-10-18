@@ -52,6 +52,16 @@ describe('SettingsForm', () => {
     })
   })
 
+  it('stops saying "saved" once a field is edited again', async () => {
+    renderForm()
+    save()
+    await screen.findByRole('status')
+
+    type('Pokyny k osobnímu odběru', 'Jinde')
+
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+
   it('shows a price error tied to its field and does not call the server', async () => {
     const action = renderForm()
     type('Cena Zásilkovny (Kč)', 'abc')

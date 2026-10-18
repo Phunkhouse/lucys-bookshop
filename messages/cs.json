@@ -242,7 +242,7 @@
       },
       "hints": {
         "zasilkovnaPrice": "Jednotná cena za balík, například 89 nebo 89,50. Bez ceny se Zásilkovna v objednávce nenabízí, kupující pak může zvolit jen osobní odběr. Prázdné pole cenu zruší.",
-        "pickupInstructions": "Kde a kdy si kupující knihu vyzvedne. Text se ukáže po objednávce. Nejvýše 500 znaků."
+        "pickupInstructions": "Kde a kdy si kupující knihu vyzvedne. Text je vidět každému už při objednávce s osobním odběrem, nepište sem nic soukromého. Nejvýše 500 znaků."
       },
       "save": "Uložit",
       "saving": "Ukládám…",

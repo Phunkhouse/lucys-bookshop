@@ -96,6 +96,8 @@ export function SettingsForm({ action, initialValues }: SettingsFormProps) {
       className={css.form}
       method="post"
       noValidate
+      // Any edit makes the "saved" message untrue.
+      onChange={() => setSaved(false)}
       onSubmit={handleSubmit(onSubmit)}
     >
       <div className={css.field}>
