@@ -160,6 +160,15 @@ describe('OrderDetails', () => {
       expect(screen.queryByText('Číslo účtu')).toBeNull()
     })
 
+    it('does not talk about a bank payment for an expired cash order', () => {
+      renderOrder({ stage: 'expired', paymentMethod: 'cash_on_pickup' })
+      expect(
+        screen.getByRole('heading', { name: 'Rezervace vypršela' }),
+      ).toBeDefined()
+      expect(screen.queryByText(/Pokud jste už zaplatili/)).toBeNull()
+      expect(screen.getByText(/uvolnili/)).toBeDefined()
+    })
+
     it('thanks the buyer once paid, and says what comes next for each delivery', () => {
       const { unmount } = renderOrder({ stage: 'paid' })
       expect(

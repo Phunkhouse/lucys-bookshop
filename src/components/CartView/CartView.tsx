@@ -237,9 +237,12 @@ export function CartView({ imageBaseUrl, validate }: CartViewProps) {
               )}
             </strong>
           </p>
-          <Link href="/checkout" className={css.checkout}>
-            {t('checkout')}
-          </Link>
+          {/* A changed price has to be accepted first, as checkout insists. */}
+          {current.validation.lines.every((line) => line.kind === 'ok') && (
+            <Link href="/checkout" className={css.checkout}>
+              {t('checkout')}
+            </Link>
+          )}
         </>
       )}
     </>

@@ -331,6 +331,7 @@
     "deadlineCash": "Knihy máme rezervované do {date}.",
     "keepPage": "Uložte si tuto stránku do záložek nebo ji vyfoťte. Potvrzení e-mailem neposíláme.",
     "expiredText": "Pokud jste už zaplatili, prodávající to uvidí na účtu a ozve se vám.",
+    "expiredCash": "Knihy jsme uvolnili. Pokud je pořád chcete, vyberte je prosím v nabídce znovu.",
     "paidPickup": "Prodávající se vám ozve ohledně převzetí.",
     "paidShipping": "Balík odešleme Zásilkovnou.",
     "shippedTracking": "Sledovací číslo: {tracking}",

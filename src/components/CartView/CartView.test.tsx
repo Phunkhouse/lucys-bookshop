@@ -111,6 +111,34 @@ describe('CartView', () => {
     expect(link.getAttribute('href')).toBe('/checkout')
   })
 
+  it('holds the checkout back until a changed price is accepted', async () => {
+    store([{ shortId: 'aaaaaa11', priceMinorSeen: 18900 }])
+    const validate = vi.fn().mockResolvedValue(
+      answer([
+        {
+          ...listed('aaaaaa11', 'První kniha'),
+          kind: 'price_changed',
+          priceMinor: 20000,
+          seenPriceMinor: 18900,
+        },
+      ]),
+    )
+    renderCart(validate)
+
+    await screen.findByText('První kniha')
+    expect(
+      screen.queryByRole('link', { name: 'Pokračovat k objednávce' }),
+    ).toBeNull()
+
+    validate.mockResolvedValue(answer([ok('aaaaaa11', 'První kniha', 20000)]))
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Souhlasím s novou cenou' }),
+    )
+    expect(
+      await screen.findByRole('link', { name: 'Pokračovat k objednávce' }),
+    ).toBeDefined()
+  })
+
   it('has no way to the checkout for an empty cart', () => {
     renderCart(vi.fn())
     expect(

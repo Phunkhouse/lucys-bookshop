@@ -106,7 +106,9 @@ export function OrderDetails({
         </>
       )}
 
-      {order.stage === 'expired' && <p>{t('expiredText')}</p>}
+      {order.stage === 'expired' && (
+        <p>{t(cash ? 'expiredCash' : 'expiredText')}</p>
+      )}
 
       {order.stage === 'paid' && (
         <>
