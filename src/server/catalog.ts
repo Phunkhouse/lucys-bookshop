@@ -49,7 +49,7 @@ async function genreKeysByBook(bookIds: string[]) {
 }
 
 // Images per book in display order (lowest position first).
-async function imagesByBook(bookIds: string[]) {
+export async function imagesByBook(bookIds: string[]) {
   const rows = await db
     .select()
     .from(bookImages)
