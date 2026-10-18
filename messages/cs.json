@@ -293,7 +293,48 @@
       "books": "{count, plural, one {# kniha} few {# knihy} many {# knihy} other {# knih}}",
       "placed": "Zadáno {when}",
       "expiringSoon": "Brzy vyprší",
-      "empty": "V tomto filtru nejsou žádné objednávky."
+      "empty": "V tomto filtru nejsou žádné objednávky.",
+      "detail": {
+        "back": "Zpět na objednávky",
+        "buyer": "Kupující",
+        "email": "E-mail",
+        "phone": "Telefon",
+        "delivery": "Doručení",
+        "pickupPoint": "Výdejní místo",
+        "tracking": "Číslo zásilky",
+        "payment": "Platba",
+        "deadline": "Rezervace platí do {when}.",
+        "deadlineExpired": "Rezervace skončila {when}.",
+        "paidAt": "Zaplaceno {when}.",
+        "items": "Knihy v objednávce",
+        "shippingCost": "Doprava",
+        "free": "Zdarma",
+        "total": "Celkem",
+        "note": "Poznámka",
+        "writeToBuyer": "Napsat kupujícímu",
+        "conflict": {
+          "title": "Některé knihy už nejsou volné",
+          "text": "Objednávka čeká na platbu, ale tyto knihy má mezitím někdo jiný. Pokud kupující už zaplatil, vraťte mu peníze z banky a objednávku zrušte.",
+          "reserved": "rezervovaná jinou objednávkou",
+          "sold": "prodaná",
+          "hidden": "skrytá"
+        },
+        "mail": {
+          "signature": "Děkuji,\n{shopName}",
+          "reminder": {
+            "subject": "Objednávka č. {number} v obchodě {shopName}",
+            "body": "Dobrý den, {name},\n\nVaše objednávka č. {number} zatím není zaplacená. {expired, select, true {Rezervace knih skončila {deadline}.} other {Rezervace knih platí do {deadline}.}}\n\nPlatební údaje najdete na stránce objednávky:\n{link}\n\nPokud jste už zaplatili, napište mi prosím.\n\n{signature}"
+          },
+          "paid": {
+            "subject": "Objednávka č. {number}: platba přijata",
+            "body": "Dobrý den, {name},\n\nplatbu za objednávku č. {number} jsme přijali, děkujeme. {shipping, select, pickup {Knihy jsou připravené k osobnímu převzetí.} other {Knihy Vám co nejdříve odešleme přes Zásilkovnu.}}\n\n{signature}"
+          },
+          "shipped": {
+            "subject": "Objednávka č. {number}: odesláno",
+            "body": "Dobrý den, {name},\n\nobjednávka č. {number} byla odeslána přes Zásilkovnu. Číslo zásilky: {tracking}\n\n{signature}"
+          }
+        }
+      }
     }
   },
   "Checkout": {

@@ -1,8 +1,8 @@
 import { asc, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
-import { displayStatus } from './availability'
 import { db } from './db/client'
 import { books, orderItems, orders } from './db/schema'
+import { conflictingBooks } from './order-conflicts'
 import type { UnavailableReason } from './reservations'
 
 export type ConflictBook = {
@@ -94,16 +94,7 @@ async function markOrderPaid(
       .orderBy(asc(books.id))
       .for('update')
 
-    const conflicts: ConflictBook[] = []
-    for (const book of rows) {
-      const stillOurs =
-        book.status === 'reserved' && book.reservedByOrderId === order.id
-      if (stillOurs) continue
-      const current = displayStatus(book, now)
-      if (current !== 'available') {
-        conflicts.push({ id: book.id, title: book.title, reason: current })
-      }
-    }
+    const conflicts = conflictingBooks(order.id, rows, now)
     if (conflicts.length > 0) return { status: 'conflict', books: conflicts }
 
     await tx

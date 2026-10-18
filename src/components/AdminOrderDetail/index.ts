@@ -1,0 +1,1 @@
+export { AdminOrderDetail } from './AdminOrderDetail'
