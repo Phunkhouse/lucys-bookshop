@@ -1,6 +1,6 @@
 # Used Books E-shop: Spec v13
 
-Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04), the M1 and M2 planning rounds (2026-10-08), the domain purchase and the M3 planning round (2026-10-18) are merged in. Sections that changed from v12 are marked **(v13)**; v12 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
+Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04), the M1 and M2 planning rounds (2026-10-08), the domain purchase, the M3 planning round and the M4 build (2026-10-18) are merged in. Sections that changed from v12 are marked **(v13)**; v12 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
 
 ## 1. Purpose **(v11)**
 
@@ -132,7 +132,7 @@ Each listing is one physical copy:
 - **Late payment policy:** if the seller sees a payment for an expired order, marking it paid re-checks the books. If they are still free, they are re-reserved and sold. If someone else got them, the admin shows the conflict and the seller refunds manually from her bank and cancels the order.
 - **Seller reminder:** about 24 hours after checkout, if the order is still unpaid, the seller is notified (and the admin list flags it) that the reservation will be released in about 24 hours, so she can contact the buyer herself. The buyer gets no automatic reminder in v1. This needs a scheduled job (see 10).
 
-### 6.5 Checkout
+### 6.5 Checkout **(v13)**
 
 - Guest checkout: name, email (so the seller can write to the buyer), phone, shipping details.
 - **Shipping options (v1):**
@@ -142,10 +142,13 @@ Each listing is one physical copy:
 - Required checkboxes: agreement with terms, acknowledgement of privacy policy.
 - On submit: server validates cart, calculates totals, creates the order, reserves the books, and shows the **order page** at an unguessable link (`/order/<token>`) with QR code, account number, amount, variable symbol, and deadline. For cash on pickup the page shows the pickup instructions instead of the QR code. The buyer is told to bookmark or screenshot the page, since there is no confirmation email.
 - No redirect to an external provider and no card data anywhere.
+- **Built in M4 (ADR 0017).** The checkout page is `/checkout`, linked from the cart once every line is clean. Zásilkovna is offered only after the seller has set its price. The browser sends the prices it showed (books and shipping); the server compares them with its own, stops on a mismatch and charges its own values. One checkout key per attempt makes a double press return the same order; a retry with different choices is refused and points to the order that exists. The time the buyer accepted the terms is stored. Checkout is limited to 10 attempts per 10 minutes per address, counted in Postgres.
+- The order page shows no e-mail, name, phone or seller note: the link is the only secret.
 
-### 6.6 Payments
+### 6.6 Payments **(v13)**
 
 - **QR platba** in the Czech SPAYD format, generated server-side from the order (account IBAN, amount, variable symbol, message). No external payment service.
+- **The seller's account** is the `SELLER_IBAN` environment variable (a Czech IBAN), not a database setting, and is never committed. Until it is set, a bank order's page says the payment details are missing. The QR message is `Objednavka <number>`.
 - **Variable symbol = the numeric order number** (digits only, at most 10), so payments can be matched to orders.
 - Source of truth for "paid" is the **seller's manual confirmation** in admin, after she sees the money in her Raiffeisenbank account (or receives cash).
 - Payment confirmation goes through a `PaymentConfirmer` interface in the service layer. v1 has one implementation (manual). Later implementations (CSV statement import, Raiffeisenbank Premium API) plug in behind the same interface without changing order logic.
@@ -191,16 +194,18 @@ Statuses: `pending_payment` → `paid` → `shipped` → `completed`, plus `canc
 - About/contact page, shipping and payment info, terms and conditions, privacy policy, cookie notice (if analytics or marketing cookies are used).
 - Wording depends on the seller's legal status (section 9).
 
-## 7. Data model (draft) **(v8)**
+## 7. Data model (draft) **(v8, v13)**
 
 - **Book**: id, **shortId** (random, unique, immutable; used in the URL; the slug is computed from the title and not stored), title, author, isbn (indexed, not unique), description, language, condition (`like_new` | `used`), conditionNote, priceMinor (integer), currency, status (available | reserved | sold | hidden), reservedUntil, reservedByOrderId, createdAt, updatedAt, soldAt
 - **Genre**: id, key, slug (labels live in the messages files under `Genres.<key>`)
 - **BookGenre**: bookId, genreId (many-to-many)
 - **BookImage**: id, bookId, **baseKey** (object storage key prefix; the three renditions live under it), position, width, height
-- **Order**: id, number (also the variable symbol), publicToken, status, paymentMethod, email, name, phone, shipping details (including pickup-point text), shippingMethod, shippingCostMinor, totalMinor, locale, expiresAt, sellerRemindedAt, trackingNumber, note, createdAt, paidAt
+- **Order**: id, number (also the variable symbol), publicToken, status, paymentMethod, email, name, phone, shipping details (including pickup-point text), shippingMethod, shippingCostMinor, totalMinor, currency, locale, expiresAt, sellerRemindedAt, trackingNumber, note, checkoutKey (unique), termsAcceptedAt, createdAt, paidAt
 - **OrderItem**: id, orderId, bookId, titleSnapshot, priceMinorSnapshot
 - **Users and sessions**: managed by Better Auth, no role field (one admin level)
-- **Settings**: Zásilkovna flat price, pickup instructions
+- **Settings**: one row: Zásilkovna flat price (none means Zásilkovna is not offered), pickup instructions
+- **OrderCounter**: year, last sequence number used (order number = year × 10000 + sequence)
+- **RequestLimit**: key (a keyed hash of the address, never the address), window start, count
 
 Notes: `reservedByOrderId` is added in M3, together with the orders table and its foreign key; M1 does not create it. `updatedAt` is set on every change to a book. Store money as integers, never floats. Add database indexes on status, reservedUntil, soldAt, genre join, and price. Use database transactions when reserving and marking sold. Full-text search via Postgres. The image base URL is an environment variable.
 
@@ -351,3 +356,4 @@ Still open:
 | 2026-10-17 | Shop photos use a plain `<img>` with `srcset` of the three renditions instead of `next/image`; the book page shows photos in a carousel (drag, buttons, arrow keys, a counter that stays put; Embla Carousel); covers are cropped to 3:4 on cards; shared links carry the cover as Open Graph image; saved photos get a one-year immutable Cache-Control; AI-written alt texts wait for the SEO work |
 | 2026-10-18 | Shop name agreed and domain `lucys-bookshop.cz` bought; connected to production at M7, buyer emails still after v1; registration owner to settle before M8                                                                                                                                                                                                                                           |
 | 2026-10-18 | M3: cart is a page showing the subtotal only (shipping at checkout); `orders` tables and `reservedByOrderId` in M3; `reserveBooks` locks rows in id order and checks before writing; cart keeps only book ids and seen prices in the browser (ADR 0016)                                                                                                                                              |
+| 2026-10-18 | M4: one transaction places an order and charges the server's prices, comparing the book and shipping prices the buyer saw; number = year × 10000 + sequence; checkout key, `SELLER_IBAN`, Postgres rate limit, Zásilkovna only once priced (ADR 0017)                                                                                                                                                |
