@@ -1,9 +1,9 @@
 import { asc, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import type { AdminActor } from '@/server/auth/require-admin'
-import { displayStatus } from '@/server/availability'
 import { db } from '@/server/db/client'
 import { books, orderItems, orders } from '@/server/db/schema'
+import { conflictingBooks, type ConflictBook } from '@/server/order-conflicts'
 import {
   canExtend,
   canTransition,
@@ -11,7 +11,6 @@ import {
   normalizeNote,
   normalizeTrackingNumber,
 } from '@/server/order-transitions'
-import type { ConflictBook } from '@/server/payments'
 import type { DbTransaction } from '@/server/reservations'
 
 // The admin's order actions (spec 6.4, 6.7, 6.9). Every one follows the same
@@ -186,16 +185,7 @@ export async function extendReservation(
     }
 
     const rows = await lockBooksOf(tx, order)
-    const conflicts: ConflictBook[] = []
-    for (const book of rows) {
-      const stillOurs =
-        book.status === 'reserved' && book.reservedByOrderId === order.id
-      if (stillOurs) continue
-      const current = displayStatus(book, now)
-      if (current !== 'available') {
-        conflicts.push({ id: book.id, title: book.title, reason: current })
-      }
-    }
+    const conflicts = conflictingBooks(order.id, rows, now)
     if (conflicts.length > 0) return { outcome: 'conflict', books: conflicts }
 
     const expiresAt = extendedDeadline(now, order.expiresAt)
