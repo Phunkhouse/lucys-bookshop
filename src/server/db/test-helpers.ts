@@ -6,7 +6,7 @@ import { bookGenres, bookImages, books, genres, orders } from './schema'
 // and the auth tables that reference the user.
 export async function resetDatabase() {
   await db.execute(
-    sql`TRUNCATE TABLE books, orders, order_items, genres, book_genres, book_images, "user", session, account, verification, rate_limit RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE books, orders, order_items, order_counters, settings, genres, book_genres, book_images, "user", session, account, verification, rate_limit RESTART IDENTITY CASCADE`,
   )
 }
 

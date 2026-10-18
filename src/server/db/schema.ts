@@ -176,6 +176,12 @@ export const orders = pgTable(
     sellerRemindedAt: timestamp('seller_reminded_at', { withTimezone: true }),
     trackingNumber: text('tracking_number'),
     note: text('note'),
+    // Chosen by the browser per checkout attempt, so a double click returns
+    // the same order instead of a second one (M4). Unique; null only on rows
+    // that predate it.
+    checkoutKey: text('checkout_key').unique(),
+    // When the buyer ticked the terms and privacy boxes (spec 6.5).
+    termsAcceptedAt: timestamp('terms_accepted_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -218,5 +224,43 @@ export const orderItems = pgTable(
     unique().on(t.orderId, t.bookId),
     index().on(t.bookId),
     check('order_items_price_not_negative', sql`${t.priceMinorSnapshot} >= 0`),
+  ],
+)
+
+// Last sequence number used per year. The order number is year * 10000 + last
+// (20260001), taken with an atomic upsert inside the checkout transaction, so a
+// rollback leaves no gap and two checkouts never share a number.
+export const orderCounters = pgTable(
+  'order_counters',
+  {
+    year: integer('year').primaryKey(),
+    last: integer('last').notNull().default(0),
+  },
+  (t) => [
+    // Four digits of sequence per year; the next order fails loudly, not wrongly.
+    check('order_counters_last_range', sql`${t.last} BETWEEN 0 AND 9999`),
+    check('order_counters_year_range', sql`${t.year} BETWEEN 2000 AND 9999`),
+  ],
+)
+
+// Shop settings (spec 6.9): exactly one row, id 1, written by the admin page.
+// No row, or a null price, means "not set up yet": Zásilkovna is then not
+// offered at checkout rather than offered for free.
+export const settings = pgTable(
+  'settings',
+  {
+    id: integer('id').primaryKey().default(1),
+    zasilkovnaPriceMinor: integer('zasilkovna_price_minor'),
+    pickupInstructions: text('pickup_instructions').notNull().default(''),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check('settings_single_row', sql`${t.id} = 1`),
+    check(
+      'settings_price_not_negative',
+      sql`${t.zasilkovnaPriceMinor} IS NULL OR ${t.zasilkovnaPriceMinor} >= 0`,
+    ),
   ],
 )
