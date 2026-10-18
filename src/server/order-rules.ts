@@ -51,6 +51,45 @@ export function pragueYear(now: Date): number {
   return Number(pragueYearFormat.format(now))
 }
 
+// A retry with a checkout key that already made an order (the answer was lost,
+// the buyer pressed again) is the same order only if nothing the buyer chose
+// has changed. Prices are not compared: the order keeps the server's.
+export function matchesPlacedOrder(
+  placed: {
+    name: string
+    email: string
+    phone: string
+    paymentMethod: string
+    shippingMethod: ShippingMethod
+    shippingDetails: string | null
+  },
+  placedShortIds: string[],
+  retry: {
+    name: string
+    email: string
+    phone: string
+    paymentMethod: string
+    shippingMethod: ShippingMethod
+    shippingDetails?: string
+    cart: { shortId: string }[]
+  },
+): boolean {
+  const sameBooks =
+    placedShortIds.length === retry.cart.length &&
+    new Set(placedShortIds).size === placedShortIds.length &&
+    retry.cart.every((item) => placedShortIds.includes(item.shortId))
+  return (
+    sameBooks &&
+    placed.name === retry.name &&
+    placed.email === retry.email &&
+    placed.phone === retry.phone &&
+    placed.paymentMethod === retry.paymentMethod &&
+    placed.shippingMethod === retry.shippingMethod &&
+    placed.shippingDetails ===
+      normalizeShipping(retry.shippingMethod, retry.shippingDetails)
+  )
+}
+
 // The pickup point only belongs to Zásilkovna.
 export function normalizeShipping(
   method: ShippingMethod,

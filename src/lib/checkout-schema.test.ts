@@ -11,6 +11,7 @@ const valid = {
   acceptTerms: true,
   acceptPrivacy: true,
   checkoutKey: '3f6c1c52-6f6e-4c1e-9d0e-8a1f4f0b7c11',
+  shippingMinorSeen: 0,
 }
 
 const issuePaths = (input: unknown) => {
@@ -124,6 +125,19 @@ describe('checkoutInputSchema', () => {
     expect(issuePaths({ ...valid, paymentMethod: 'card' })).toContain(
       'paymentMethod',
     )
+  })
+
+  it('requires the shipping price the buyer saw, as whole minor units', () => {
+    const without: Record<string, unknown> = { ...valid }
+    delete without.shippingMinorSeen
+    expect(issuePaths(without)).toContain('shippingMinorSeen')
+    expect(issuePaths({ ...valid, shippingMinorSeen: -1 })).toContain(
+      'shippingMinorSeen',
+    )
+    expect(issuePaths({ ...valid, shippingMinorSeen: 89.5 })).toContain(
+      'shippingMinorSeen',
+    )
+    expect(issuePaths({ ...valid, shippingMinorSeen: 8900 })).toEqual([])
   })
 
   it('rejects a checkout key that is not a uuid', () => {

@@ -44,6 +44,7 @@ function checkout(
     acceptTerms: true,
     acceptPrivacy: true,
     checkoutKey: newKey(),
+    shippingMinorSeen: 0,
     ...overrides,
   }
 }
@@ -102,6 +103,66 @@ describe('placeOrder', () => {
     expect(result.replayed).toBe(false)
   })
 
+  describe('a retry with the same checkout key', () => {
+    async function placedThenRetry(change: Partial<PlaceOrderInput>) {
+      const a = await createBook()
+      const b = await createBook()
+      const extra = await createBook()
+      const first = checkout([a, b])
+      const original = await placeOrder(first, now)
+      const retry = checkout([a, b, extra], {
+        checkoutKey: first.checkoutKey,
+        ...change,
+      })
+      return { a, b, extra, original, retry }
+    }
+
+    it('returns the order for an identical retry, even with other seen prices', async () => {
+      const a = await createBook()
+      const first = checkout([a])
+      const original = await placeOrder(first, now)
+      const retry = {
+        ...first,
+        cart: [{ shortId: a.shortId, priceMinorSeen: 1 }],
+        name: '  Jana Nováková ',
+      }
+      const again = await placeOrder(retry, now)
+      expect(again.orderId).toBe(original.orderId)
+      expect(again.replayed).toBe(true)
+    })
+
+    it('refuses a retry that added a book, and tells which order exists', async () => {
+      const { a, b, extra, original, retry } = await placedThenRetry({})
+
+      const error = await failureOf(placeOrder(retry, now))
+
+      expect(error).toBeInstanceOf(PlaceOrderError)
+      const failed = error as PlaceOrderError
+      expect(failed.code).toBe('already_placed')
+      expect(failed.existing?.publicToken).toBe(original.publicToken)
+      expect(failed.existing?.shortIds.sort()).toEqual(
+        [a.shortId, b.shortId].sort(),
+      )
+      expect(await db.select().from(orders)).toHaveLength(1)
+      expect((await load(extra.id)).status).toBe('available')
+    })
+
+    it.each([
+      ['email', { email: 'jina@example.com' }],
+      ['payment method', { paymentMethod: 'cash_on_pickup' as const }],
+      ['name', { name: 'Jiná Osoba' }],
+    ])('refuses a retry with the %s changed', async (_label, change) => {
+      const a = await createBook()
+      const first = checkout([a])
+      await placeOrder(first, now)
+
+      const error = await failureOf(placeOrder({ ...first, ...change }, now))
+
+      expect((error as PlaceOrderError).code).toBe('already_placed')
+      expect(await db.select().from(orders)).toHaveLength(1)
+    })
+  })
+
   it('stores the consent time, and the pickup point only for Zásilkovna', async () => {
     await db.insert(settings).values({ zasilkovnaPriceMinor: 8900 })
     const a = await createBook()
@@ -111,6 +172,7 @@ describe('placeOrder', () => {
     await placeOrder(
       checkout([b], {
         shippingMethod: 'zasilkovna',
+        shippingMinorSeen: 8900,
         shippingDetails: '  Z-Box Praha 1  ',
       }),
       now,
@@ -130,6 +192,7 @@ describe('placeOrder', () => {
     const input = {
       ...checkout([book], {
         shippingMethod: 'zasilkovna',
+        shippingMinorSeen: 8900,
         shippingDetails: 'Z-Box',
       }),
       shippingCostMinor: 0,
@@ -140,10 +203,42 @@ describe('placeOrder', () => {
     expect(order.totalMinor).toBe(18900)
   })
 
+  it('stops when the shipping price changed after the buyer saw it', async () => {
+    await db.insert(settings).values({ zasilkovnaPriceMinor: 8900 })
+    const book = await createBook()
+    const input = checkout([book], {
+      shippingMethod: 'zasilkovna',
+      shippingDetails: 'Z-Box',
+      shippingMinorSeen: 8900,
+    })
+    await db.update(settings).set({ zasilkovnaPriceMinor: 12900 })
+
+    const error = await failureOf(placeOrder(input, now))
+
+    expect(error).toBeInstanceOf(PlaceOrderError)
+    expect((error as PlaceOrderError).code).toBe('shipping_changed')
+    expect(await db.select().from(orders)).toHaveLength(0)
+    expect((await load(book.id)).status).toBe('available')
+
+    // With the new price in hand the order goes through at that price.
+    await placeOrder({ ...input, shippingMinorSeen: 12900 }, now)
+    const [order] = await db.select().from(orders)
+    expect(order.shippingCostMinor).toBe(12900)
+  })
+
+  it('stops when the buyer saw a shipping price for pickup', async () => {
+    const book = await createBook()
+    const error = await failureOf(
+      placeOrder(checkout([book], { shippingMinorSeen: 8900 }), now),
+    )
+    expect((error as PlaceOrderError).code).toBe('shipping_changed')
+  })
+
   it('refuses Zásilkovna while the seller has set no price', async () => {
     const book = await createBook()
     const input = checkout([book], {
       shippingMethod: 'zasilkovna',
+      shippingMinorSeen: 8900,
       shippingDetails: 'Z-Box',
     })
 
@@ -165,6 +260,7 @@ describe('placeOrder', () => {
     await placeOrder(
       checkout([book], {
         shippingMethod: 'zasilkovna',
+        shippingMinorSeen: 8900,
         shippingDetails: 'Z-Box',
       }),
       now,
@@ -186,6 +282,7 @@ describe('placeOrder', () => {
       placeOrder(
         checkout([book], {
           shippingMethod: 'zasilkovna',
+          shippingMinorSeen: 8900,
           shippingDetails: 'Z-Box',
           paymentMethod: 'cash_on_pickup',
         }),

@@ -230,5 +230,72 @@
         }
       }
     }
+  },
+  "Checkout": {
+    "title": "Objednávka",
+    "loading": "Kontroluji košík…",
+    "validateFailed": "Košík se nepodařilo zkontrolovat. Zkuste to prosím znovu.",
+    "retry": "Zkusit znovu",
+    "empty": {
+      "title": "Košík je prázdný.",
+      "browse": "Zpět na knihy"
+    },
+    "cartChanged": "V košíku se něco změnilo. Zkontrolujte ho prosím, než objednávku odešlete.",
+    "toCart": "Zpět do košíku",
+    "summary": {
+      "heading": "Vaše objednávka",
+      "books": "Knihy",
+      "shipping": "Doprava",
+      "shippingFree": "zdarma",
+      "total": "Celkem"
+    },
+    "contact": {
+      "heading": "Kontakt",
+      "name": "Jméno a příjmení",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "hint": "Na tento e-mail nebo telefon se vám prodávající ozve."
+    },
+    "shipping": {
+      "heading": "Doprava",
+      "pickup": "Osobní odběr (zdarma)",
+      "zasilkovna": "Zásilkovna ({price})",
+      "pickupPoint": "Výdejní místo Zásilkovny",
+      "pickupPointHint": "Napište název nebo adresu výdejního místa.",
+      "pickupInstructions": "Osobní odběr"
+    },
+    "payment": {
+      "heading": "Platba",
+      "bank": "Převodem na účet (QR kód)",
+      "cash": "Hotově při osobním převzetí"
+    },
+    "consent": {
+      "terms": "Souhlasím s obchodními podmínkami",
+      "privacy": "Beru na vědomí zásady ochrany osobních údajů"
+    },
+    "trap": "Toto pole nevyplňujte",
+    "reserveNote": "Po odeslání vám knihy na 48 hodin rezervujeme.",
+    "submit": "Odeslat objednávku",
+    "submitting": "Odesílám…",
+    "placed": "Objednávka je odeslaná, přesměrovávám…",
+    "errors": {
+      "name": "Napište své jméno.",
+      "email": "Napište platný e-mail.",
+      "phone": "Napište telefon, například +420 601 234 567.",
+      "shippingDetails": "Napište výdejní místo Zásilkovny.",
+      "acceptTerms": "K odeslání je třeba souhlasit s podmínkami.",
+      "acceptPrivacy": "K odeslání je třeba vzít na vědomí zásady ochrany osobních údajů."
+    },
+    "failures": {
+      "unavailable": "Některá z knih se mezitím už nedá koupit. Zkontrolujte košík.",
+      "price_changed": "Cena některé knihy se mezitím změnila. Zkontrolujte košík.",
+      "shipping_changed": "Cena dopravy se mezitím změnila. Zkontrolujte celkovou cenu a odešlete objednávku znovu.",
+      "already_placed": "Objednávku jsme už přijali, ale s jinými údaji, než jste teď odeslali. Knihy z ní jsme odebrali z košíku.",
+      "showOrder": "Zobrazit přijatou objednávku",
+      "rate_limited": "Příliš mnoho pokusů. Zkuste to znovu za {minutes, plural, one {# minutu} few {# minuty} many {# minuty} other {# minut}}.",
+      "shipping_unavailable": "Doprava Zásilkovnou teď není k dispozici. Zvolte osobní odběr.",
+      "invalid": "Objednávku se nepodařilo odeslat. Zkontrolujte vyplněné údaje.",
+      "generic": "Objednávku se nepodařilo odeslat. Zkuste to prosím znovu."
+    }
   }
 }

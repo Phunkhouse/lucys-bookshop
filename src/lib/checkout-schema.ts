@@ -34,6 +34,9 @@ export const checkoutInputSchema = z
     acceptPrivacy: z.literal(true),
     // Chosen by the browser per attempt, so a double click is one order.
     checkoutKey: z.uuid(),
+    // The shipping price shown to the buyer. Only compared with the current
+    // one, like the book prices: a mismatch sends the buyer back to look.
+    shippingMinorSeen: z.number().int().nonnegative(),
     // Honeypot: hidden in the form, so only a bot fills it.
     website: z.string().max(0).optional(),
   })

@@ -5,6 +5,7 @@ import { classifyCartLine } from './cart-rules'
 import { db } from './db/client'
 import { books, orderCounters, orderItems, orders, settings } from './db/schema'
 import {
+  matchesPlacedOrder,
   normalizeShipping,
   orderNumber,
   orderTotalMinor,
@@ -36,17 +37,28 @@ export type PriceChange = {
   priceMinor: number
 }
 
-// The buyer must look at the cart again: a price moved after they saw it, or
-// Zásilkovna has no price yet. Nothing was written.
+// The buyer must look again: a book price or the shipping price moved after
+// they saw it, or Zásilkovna has no price yet. Nothing was written.
 export class PlaceOrderError extends Error {
-  readonly code: 'price_changed' | 'shipping_unavailable'
+  readonly code:
+    | 'price_changed'
+    | 'shipping_changed'
+    | 'shipping_unavailable'
+    | 'already_placed'
   readonly priceChanges: PriceChange[]
+  // For already_placed: the order this checkout key made earlier.
+  readonly existing?: { publicToken: string; shortIds: string[] }
 
-  constructor(code: PlaceOrderError['code'], priceChanges: PriceChange[] = []) {
+  constructor(
+    code: PlaceOrderError['code'],
+    priceChanges: PriceChange[] = [],
+    existing?: { publicToken: string; shortIds: string[] },
+  ) {
     super(`Checkout stopped: ${code}`)
     this.name = 'PlaceOrderError'
     this.code = code
     this.priceChanges = priceChanges
+    this.existing = existing
   }
 }
 
@@ -94,12 +106,35 @@ export async function placeOrder(
       .select()
       .from(orders)
       .where(eq(orders.checkoutKey, input.checkoutKey))
-    if (existing) return placed(existing, true)
+    if (existing) {
+      // The same press again (the answer was lost) gets the order back. A
+      // retry that differs would ignore what the buyer just changed, so it is
+      // refused and the buyer is shown the order that exists.
+      const orderedBooks = await tx
+        .select({ shortId: books.shortId })
+        .from(orderItems)
+        .innerJoin(books, eq(books.id, orderItems.bookId))
+        .where(eq(orderItems.orderId, existing.id))
+      const shortIds = orderedBooks.map((row) => row.shortId)
+      if (matchesPlacedOrder(existing, shortIds, input)) {
+        return placed(existing, true)
+      }
+      throw new PlaceOrderError('already_placed', [], {
+        publicToken: existing.publicToken,
+        shortIds,
+      })
+    }
 
     const [shopSettings] = await tx.select().from(settings)
     const shippingMinor = shippingCostMinor(input.shippingMethod, shopSettings)
-    if (shippingMinor === null)
+    if (shippingMinor === null) {
       throw new PlaceOrderError('shipping_unavailable')
+    }
+    // Like a book price: what the buyer saw is only compared, the server's
+    // value is the one charged.
+    if (input.shippingMinorSeen !== shippingMinor) {
+      throw new PlaceOrderError('shipping_changed')
+    }
 
     const rows = await tx
       .select()

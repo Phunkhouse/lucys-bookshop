@@ -1,0 +1,204 @@
+@use 'utilities' as *;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: rem(560);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+
+  legend {
+    padding-inline: var(--space-2);
+    font-weight: 700;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  input:not([type='radio']):not([type='checkbox']) {
+    min-height: rem(48);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-width) solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+
+    &:focus-visible {
+      outline: var(--focus-width) solid var(--color-focus);
+      outline-offset: 2px;
+    }
+  }
+}
+
+// A large touch target: the whole row is the label.
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: rem(48);
+
+  input {
+    flex: none;
+    width: rem(24);
+    height: rem(24);
+    accent-color: var(--color-accent);
+
+    &:focus-visible {
+      outline: var(--focus-width) solid var(--color-focus);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.consents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.hint {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.instructions {
+  padding: var(--space-3);
+  border: var(--border-width) dashed var(--color-border);
+}
+
+.instructionsTitle {
+  font-weight: 700;
+}
+
+.error {
+  font-weight: 700;
+}
+
+.failure {
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  font-weight: 700;
+}
+
+// Out of sight and out of reach, but still in the page for a bot to fill.
+.trap {
+  position: absolute;
+  left: rem(-10000);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.submit {
+  min-height: rem(48);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  &:focus-visible {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: rem(560);
+}
+
+.lines {
+  padding: 0;
+  list-style: none;
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.title {
+  display: block;
+  font-weight: 700;
+}
+
+.author {
+  display: block;
+  color: var(--color-muted);
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+}
+
+.total {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  min-height: rem(48);
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: rem(560);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  border: var(--border-width) dashed var(--color-border);
+}
+
+.emptyTitle {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
