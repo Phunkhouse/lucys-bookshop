@@ -1,5 +1,6 @@
 import { useFormatter, useTranslations } from 'next-intl'
 import { QrCode } from '@/components/QrCode'
+import { SHOP_TIME_ZONE } from '@/lib/shop-time-zone'
 import { useMoney } from '@/lib/use-money'
 import type { OrderStage, OrderView } from '@/server/order-view'
 import type { PaymentInstructions } from '@/server/payment-instructions'
@@ -11,9 +12,6 @@ type OrderDetailsProps = {
   payment: PaymentInstructions | null
   pickupInstructions: string
 }
-
-// The shop's clock, not the visitor's.
-const SHOP_TIME_ZONE = 'Europe/Prague'
 
 const groupIban = (iban: string) => iban.replace(/(.{4})(?=.)/g, '$1 ')
 
