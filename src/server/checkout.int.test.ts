@@ -157,6 +157,25 @@ describe('submitCheckout', () => {
     expect(await db.select().from(orders)).toHaveLength(0)
   })
 
+  it('tells a buyer whose retry differs which order was already placed', async () => {
+    const a = await createBook()
+    const b = await createBook()
+    const first = input([a])
+    const placed = await submitCheckout(first, context())
+    expect(placed.ok).toBe(true)
+
+    const retry = input([a, b], { checkoutKey: first.checkoutKey })
+    const result = await submitCheckout(retry, context())
+
+    expect(result).toEqual({
+      ok: false,
+      reason: 'already_placed',
+      publicToken: (placed as { publicToken: string }).publicToken,
+      shortIds: [a.shortId],
+    })
+    expect(await db.select().from(orders)).toHaveLength(1)
+  })
+
   it('returns the same link when the buyer clicks twice', async () => {
     const book = await createBook()
     const same = input([book])

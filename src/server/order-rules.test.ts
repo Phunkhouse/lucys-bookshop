@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  matchesPlacedOrder,
   normalizeShipping,
   orderNumber,
   orderTotalMinor,
@@ -74,5 +75,68 @@ describe('normalizeShipping', () => {
   it('drops any pickup point for personal pickup', () => {
     expect(normalizeShipping('pickup', 'Z-Box Praha 1')).toBeNull()
     expect(normalizeShipping('pickup', undefined)).toBeNull()
+  })
+})
+
+describe('matchesPlacedOrder', () => {
+  const placed = {
+    name: 'Jana Nováková',
+    email: 'jana@example.com',
+    phone: '+420 601 234 567',
+    paymentMethod: 'bank_transfer' as const,
+    shippingMethod: 'zasilkovna' as const,
+    shippingDetails: 'Z-Box Praha 1',
+  }
+  const retry = {
+    ...placed,
+    cart: [{ shortId: 'aaaaaa11' }, { shortId: 'bbbbbb22' }],
+  }
+  const ordered = ['bbbbbb22', 'aaaaaa11']
+
+  it('accepts the same order, whatever the order of the books', () => {
+    expect(matchesPlacedOrder(placed, ordered, retry)).toBe(true)
+  })
+
+  it('accepts the pickup point written with spaces around it', () => {
+    expect(
+      matchesPlacedOrder(placed, ordered, {
+        ...retry,
+        shippingDetails: '  Z-Box Praha 1 ',
+      }),
+    ).toBe(true)
+  })
+
+  it('ignores a pickup point typed for personal pickup', () => {
+    const pickup = {
+      ...placed,
+      shippingMethod: 'pickup' as const,
+      shippingDetails: null,
+    }
+    expect(
+      matchesPlacedOrder(pickup, ordered, {
+        ...retry,
+        shippingMethod: 'pickup',
+        shippingDetails: 'left over from before',
+      }),
+    ).toBe(true)
+  })
+
+  it.each([
+    ['name', { name: 'Jiná' }],
+    ['email', { email: 'jina@example.com' }],
+    ['phone', { phone: '+420 777 000 000' }],
+    ['payment', { paymentMethod: 'cash_on_pickup' as const }],
+    ['shipping', { shippingMethod: 'pickup' as const }],
+    ['pickup point', { shippingDetails: 'Z-Box Brno' }],
+    ['a book added', { cart: [...retry.cart, { shortId: 'cccccc33' }] }],
+    ['a book removed', { cart: [{ shortId: 'aaaaaa11' }] }],
+    [
+      'another book',
+      { cart: [{ shortId: 'aaaaaa11' }, { shortId: 'dddddd44' }] },
+    ],
+  ])('refuses a retry with %s changed', (_label, change) => {
+    expect(matchesPlacedOrder(placed, ordered, { ...retry, ...change })).toBe(
+      false,
+    )
   })
 })

@@ -79,6 +79,7 @@ type Failure =
   | 'unavailable'
   | 'price_changed'
   | 'shipping_changed'
+  | 'already_placed'
   | 'rate_limited'
   | 'shipping_unavailable'
   | 'invalid'
@@ -98,11 +99,15 @@ export function CheckoutForm({
   const { items, remove } = useCart()
   const [answer, setAnswer] = useState<Answer | null>(null)
   const [attempt, setAttempt] = useState(0)
-  const [failure, setFailure] = useState<{ kind: Failure; minutes?: number }>()
+  const [failure, setFailure] = useState<{
+    kind: Failure
+    minutes?: number
+    orderToken?: string
+  }>()
   const [placed, setPlaced] = useState(false)
   // One key per checkout attempt: pressing again after a lost answer returns
   // the order the first press made instead of a second one.
-  const [checkoutKey] = useState(() => crypto.randomUUID())
+  const [checkoutKey, setCheckoutKey] = useState(() => crypto.randomUUID())
 
   const cartKey = JSON.stringify(items)
 
@@ -194,6 +199,15 @@ export function CheckoutForm({
           kind: 'rate_limited',
           minutes: Math.max(1, Math.ceil(result.retryAfterMs / 60_000)),
         })
+        return
+      }
+      if (result.reason === 'already_placed') {
+        // An earlier press went through with other choices. Those books are
+        // ordered now, so they leave the cart; anything else stays, and the
+        // next order needs a key of its own.
+        for (const shortId of result.shortIds) remove(shortId)
+        setCheckoutKey(crypto.randomUUID())
+        setFailure({ kind: 'already_placed', orderToken: result.publicToken })
         return
       }
       setFailure({ kind: result.reason })
@@ -498,6 +512,14 @@ export function CheckoutForm({
         {failure && (
           <p role="alert" className={css.failure}>
             {t(`failures.${failure.kind}`, { minutes: failure.minutes ?? 0 })}
+            {failure.orderToken && (
+              <>
+                {' '}
+                <Link href={`/order/${failure.orderToken}`}>
+                  {t('failures.showOrder')}
+                </Link>
+              </>
+            )}
           </p>
         )}
 

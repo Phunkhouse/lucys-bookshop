@@ -27,6 +27,13 @@ export type CheckoutResult =
   | { ok: false; reason: 'unavailable' }
   | { ok: false; reason: 'price_changed' }
   | { ok: false; reason: 'shipping_changed' }
+  // This checkout key already made an order, with other choices than now.
+  | {
+      ok: false
+      reason: 'already_placed'
+      publicToken: string
+      shortIds: string[]
+    }
   | { ok: false; reason: 'shipping_unavailable' }
 
 // The checkout entry point behind the server action: limit, validate, order.
@@ -61,6 +68,10 @@ export async function submitCheckout(
       return { ok: false, reason: 'unavailable' }
     }
     if (error instanceof PlaceOrderError) {
+      if (error.code === 'already_placed' && error.existing) {
+        return { ok: false, reason: 'already_placed', ...error.existing }
+      }
+      if (error.code === 'already_placed') throw error
       return { ok: false, reason: error.code }
     }
     throw error

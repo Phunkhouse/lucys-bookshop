@@ -290,6 +290,8 @@
       "unavailable": "Některá z knih se mezitím už nedá koupit. Zkontrolujte košík.",
       "price_changed": "Cena některé knihy se mezitím změnila. Zkontrolujte košík.",
       "shipping_changed": "Cena dopravy se mezitím změnila. Zkontrolujte celkovou cenu a odešlete objednávku znovu.",
+      "already_placed": "Objednávku jsme už přijali, ale s jinými údaji, než jste teď odeslali. Knihy z ní jsme odebrali z košíku.",
+      "showOrder": "Zobrazit přijatou objednávku",
       "rate_limited": "Příliš mnoho pokusů. Zkuste to znovu za {minutes, plural, one {# minutu} few {# minuty} many {# minuty} other {# minut}}.",
       "shipping_unavailable": "Doprava Zásilkovnou teď není k dispozici. Zvolte osobní odběr.",
       "invalid": "Objednávku se nepodařilo odeslat. Zkontrolujte vyplněné údaje.",

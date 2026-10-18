@@ -360,6 +360,61 @@ describe('CheckoutForm', () => {
       expect(storedItems()).toEqual(TWO_BOOKS)
     })
 
+    it('shows the order that already exists when the retry differs, and keeps the new book', async () => {
+      const added = { shortId: 'cccccc33', priceMinorSeen: 7000 }
+      store([...TWO_BOOKS, added])
+      const validate = vi
+        .fn()
+        .mockResolvedValue(
+          answer([
+            ok('aaaaaa11', 'První kniha', 18900),
+            ok('bbbbbb22', 'Druhá kniha', 5000),
+            ok('cccccc33', 'Třetí kniha', 7000),
+          ]),
+        )
+      const submit = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          reason: 'already_placed',
+          publicToken: 'tok-old',
+          shortIds: ['aaaaaa11', 'bbbbbb22'],
+        })
+        .mockResolvedValue({ ok: true, publicToken: 'tok-new' })
+      renderForm({ submit, validate })
+      await ready()
+      fillContact()
+      tickConsents()
+
+      send()
+
+      const alert = await screen.findByRole('alert')
+      expect(alert.textContent).toContain('Objednávku jsme už přijali')
+      expect(
+        within(alert)
+          .getByRole('link', { name: 'Zobrazit přijatou objednávku' })
+          .getAttribute('href'),
+      ).toBe('/order/tok-old')
+      expect(storedItems()).toEqual([added])
+      expect(push).not.toHaveBeenCalled()
+
+      // The next order is a new one: it must not reuse the old key.
+      await waitFor(() =>
+        expect(
+          (
+            screen.getByRole('button', {
+              name: 'Odeslat objednávku',
+            }) as HTMLButtonElement
+          ).disabled,
+        ).toBe(false),
+      )
+      send()
+      await waitFor(() => expect(submit).toHaveBeenCalledTimes(2))
+      expect(submit.mock.calls[1][0].checkoutKey).not.toBe(
+        submit.mock.calls[0][0].checkoutKey,
+      )
+    })
+
     it('sends once however often the button is pressed, and says it is working', async () => {
       store(TWO_BOOKS)
       let finish: (value: CheckoutResult) => void = () => {}
