@@ -68,6 +68,16 @@ test('an admin adds a book with a photo, the shop shows it, then removes it', as
     page.getByRole('heading', { level: 1, name: 'Knihy' }),
   ).toBeVisible()
 
+  // The settings page opens from the admin page. Read only: the checkout
+  // tests depend on the settings the e2e reset script writes.
+  await page.getByRole('link', { name: 'Nastavení' }).click()
+  await expect(page).toHaveURL('/admin/settings')
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Nastavení obchodu' }),
+  ).toBeVisible()
+  await expect(page.getByLabel('Cena Zásilkovny (Kč)')).toBeVisible()
+  await page.goto('/admin')
+
   // Add the book with one photo.
   await page.getByRole('link', { name: 'Přidat knihu' }).click()
   await expect(page).toHaveURL('/admin/books/new')

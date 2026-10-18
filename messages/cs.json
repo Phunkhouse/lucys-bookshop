@@ -230,6 +230,32 @@
           "uploadFailed": "Nahrání se nepovedlo. Zkuste to znovu."
         }
       }
+    },
+    "settings": {
+      "link": "Nastavení",
+      "back": "Zpět na seznam knih",
+      "heading": "Nastavení obchodu",
+      "intro": "Tady nastavíte dopravu Zásilkovnou a pokyny k osobnímu odběru. Změna se hned projeví v objednávce.",
+      "fields": {
+        "zasilkovnaPrice": "Cena Zásilkovny (Kč)",
+        "pickupInstructions": "Pokyny k osobnímu odběru"
+      },
+      "hints": {
+        "zasilkovnaPrice": "Jednotná cena za balík, například 89 nebo 89,50. Bez ceny se Zásilkovna v objednávce nenabízí, kupující pak může zvolit jen osobní odběr. Prázdné pole cenu zruší.",
+        "pickupInstructions": "Kde a kdy si kupující knihu vyzvedne. Text se ukáže po objednávce. Nejvýše 500 znaků."
+      },
+      "save": "Uložit",
+      "saving": "Ukládám…",
+      "saved": "Nastavení uloženo.",
+      "errors": {
+        "invalid": "Neplatná hodnota.",
+        "tooLong": "Text je příliš dlouhý.",
+        "priceInvalid": "Zadejte cenu číslem, například 89 nebo 89,50.",
+        "priceDecimals": "Cena může mít nejvýše dvě desetinná místa.",
+        "pricePositive": "Cena musí být vyšší než 0. Pro zrušení ceny nechte pole prázdné.",
+        "priceTooHigh": "Cena může být nejvýše 100 000 Kč.",
+        "saveFailed": "Uložení se nepodařilo. Zkuste to prosím znovu."
+      }
     }
   },
   "Checkout": {
