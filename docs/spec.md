@@ -1,6 +1,6 @@
 # Used Books E-shop: Spec v13
 
-Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04), the M1 and M2 planning rounds (2026-10-08) and the domain purchase (2026-10-18) are merged in. Sections that changed from v12 are marked **(v13)**; v12 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
+Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04), the M1 and M2 planning rounds (2026-10-08), the domain purchase and the M3 planning round (2026-10-18) are merged in. Sections that changed from v12 are marked **(v13)**; v12 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
 
 ## 1. Purpose **(v11)**
 
@@ -114,11 +114,11 @@ Each listing is one physical copy:
 - A `hidden` book has no public page: its URL returns 404.
 - Rendered as a page for SEO and sharing.
 
-### 6.3 Cart
+### 6.3 Cart **(v13)**
 
 - Each book can be in the cart once.
 - Cart stored client-side (localStorage), always **re-validated on the server** at checkout: items still available, prices current.
-- Cart drawer or page, showing items, subtotal, shipping, and total.
+- **A cart page (`/cart`)**, not a drawer, showing items and the subtotal. Shipping and the total appear at checkout, where the shipping option is chosen (M3 decision, ADR 0016).
 - If a book became unavailable while in the cart, tell the user and remove it. If a price changed, show the new price and ask the buyer to confirm.
 
 ### 6.4 Reservation (prevents double-selling)
@@ -350,3 +350,4 @@ Still open:
 | 2026-10-16 | Project conventions live in `AGENTS.md` (read by Codex and other agents); `CLAUDE.md` only imports it                                                                                                                                                                                                                                                                                                |
 | 2026-10-17 | Shop photos use a plain `<img>` with `srcset` of the three renditions instead of `next/image`; the book page shows photos in a carousel (drag, buttons, arrow keys, a counter that stays put; Embla Carousel); covers are cropped to 3:4 on cards; shared links carry the cover as Open Graph image; saved photos get a one-year immutable Cache-Control; AI-written alt texts wait for the SEO work |
 | 2026-10-18 | Shop name agreed and domain `lucys-bookshop.cz` bought; connected to production at M7, buyer emails still after v1; registration owner to settle before M8                                                                                                                                                                                                                                           |
+| 2026-10-18 | M3: cart is a page showing the subtotal only (shipping at checkout); `orders` tables and `reservedByOrderId` in M3; `reserveBooks` locks rows in id order and checks before writing; cart keeps only book ids and seen prices in the browser (ADR 0016)                                                                                                                                              |
