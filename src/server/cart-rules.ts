@@ -1,22 +1,6 @@
-import { z } from 'zod'
+import type { CartInput } from '@/lib/cart-schema'
 import { displayStatus, type AvailabilityFields } from './availability'
 import type { ImageRef } from './catalog'
-
-// What the browser sends: which books are in the cart and the price the buyer
-// saw when adding each. The seen price is only compared, never trusted.
-export const MAX_CART_ITEMS = 50
-
-export const cartInputSchema = z
-  .array(
-    z.object({
-      shortId: z.string().regex(/^[0-9a-z]{6,8}$/),
-      priceMinorSeen: z.number().int().nonnegative(),
-    }),
-  )
-  .max(MAX_CART_ITEMS)
-
-export type CartInput = z.infer<typeof cartInputSchema>
-type CartInputItem = CartInput[number]
 
 // The stored fields a cart line needs.
 export type CartBook = AvailabilityFields & {
@@ -52,7 +36,7 @@ export type CartLine =
   | { kind: 'gone'; shortId: string }
 
 export function classifyCartLine(
-  item: CartInputItem,
+  item: CartInput[number],
   book: CartBook | undefined,
   now: Date,
   cover: ImageRef | null,

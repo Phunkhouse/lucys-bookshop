@@ -7,6 +7,7 @@ import '../reset.css'
 import '../variables.scss'
 import '../globals.css'
 import { shopConfig } from '@/config/shop'
+import { SiteHeader } from '@/components/SiteHeader'
 import { routing } from '@/i18n/routing'
 
 const geistSans = Geist({
@@ -39,7 +40,10 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <SiteHeader />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   )

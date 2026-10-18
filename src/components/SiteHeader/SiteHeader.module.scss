@@ -1,0 +1,33 @@
+@use 'utilities' as *;
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+  width: 100%;
+  max-width: rem(1200);
+  margin-inline: auto;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.name {
+  color: inherit;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.links {
+  display: flex;
+  gap: var(--space-5);
+  padding: 0;
+  list-style: none;
+
+  a {
+    display: inline-block;
+    padding-block: var(--space-3); // a large touch target
+  }
+}

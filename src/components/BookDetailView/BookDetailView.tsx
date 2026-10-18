@@ -1,4 +1,5 @@
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
+import { AddToCartButton } from '@/components/AddToCartButton'
 import { Badge } from '@/components/Badge'
 import { PhotoGallery } from '@/components/PhotoGallery'
 import { Link } from '@/i18n/navigation'
@@ -67,16 +68,12 @@ export function BookDetailView({ book, imageBaseUrl }: BookDetailViewProps) {
           <p className={css.author}>{book.author}</p>
           <p className={css.price}>{price}</p>
 
-          <div className={css.buy}>
-            <button type="button" disabled aria-describedby="buy-message">
-              {t('detail.addToCart')}
-            </button>
-            <p id="buy-message">
-              {book.status === 'sold'
-                ? t('detail.message.sold', { date: soldDate ?? '' })
-                : t(`detail.message.${book.status}`)}
-            </p>
-          </div>
+          <AddToCartButton
+            shortId={book.shortId}
+            priceMinor={book.priceMinor}
+            status={book.status}
+            soldDate={soldDate ?? ''}
+          />
 
           <dl className={css.facts}>
             <dt>{t('detail.fields.condition')}</dt>
