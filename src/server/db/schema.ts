@@ -264,3 +264,20 @@ export const settings = pgTable(
     ),
   ],
 )
+
+// Attempt counters for rate limiting (spec 8), one row per key and window.
+// The key holds a keyed hash of the address, never the address.
+export const requestLimits = pgTable(
+  'request_limits',
+  {
+    key: text('key').notNull(),
+    windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+    count: integer('count').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.key, t.windowStart] }),
+    // For the cleanup of old windows.
+    index().on(t.windowStart),
+    check('request_limits_count_positive', sql`${t.count} >= 1`),
+  ],
+)
