@@ -27,6 +27,9 @@ export default async function AdminHome({
           <Link href="/admin/books/new" className={css.add}>
             {t('books.add')}
           </Link>
+          <Link href="/admin/settings" className={css.secondary}>
+            {t('settings.link')}
+          </Link>
           <SignOutButton />
         </div>
       </header>
