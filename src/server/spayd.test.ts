@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { buildSpayd, isValidIban, normalizeIban } from './spayd'
+import { breakChecksum, groupIban, makeIban, TEST_IBAN } from './test-iban'
 
-// A published example IBAN, not the seller's account.
-const IBAN = 'CZ6508000000192000145399'
+// Built at run time from made-up parts: no account number is committed.
+const IBAN = TEST_IBAN
 
 const base = {
   iban: IBAN,
@@ -39,16 +40,16 @@ describe('buildSpayd', () => {
   )
 
   it('accepts an IBAN written with spaces or lowercase', () => {
-    expect(buildSpayd({ ...base, iban: 'cz65 0800 0000 1920 0014 5399' })).toBe(
+    expect(buildSpayd({ ...base, iban: groupIban(IBAN).toLowerCase() })).toBe(
       buildSpayd(base),
     )
   })
 
   it.each([
-    'CZ6508000000192000145390', // wrong checksum
-    'CZ65080000001920001453', // too short
-    'CZ650800000019200014539901', // too long
-    'DE89370400440532013000', // valid IBAN, but not Czech
+    breakChecksum(IBAN), // wrong checksum
+    IBAN.slice(0, -2), // too short
+    `${IBAN}01`, // too long
+    makeIban('DE', '0'.repeat(18)), // valid IBAN, but not Czech
     '',
   ])('rejects the IBAN %j', (iban) => {
     expect(() => buildSpayd({ ...base, iban })).toThrow()
@@ -96,12 +97,12 @@ describe('isValidIban', () => {
   })
 
   it('rejects a changed digit', () => {
-    expect(isValidIban('CZ6508000000192000145398')).toBe(false)
+    expect(isValidIban(breakChecksum(IBAN))).toBe(false)
   })
 })
 
 describe('normalizeIban', () => {
   it('removes spaces and uppercases', () => {
-    expect(normalizeIban(' cz65 0800 0000 1920 0014 5399 ')).toBe(IBAN)
+    expect(normalizeIban(` ${groupIban(IBAN).toLowerCase()} `)).toBe(IBAN)
   })
 })

@@ -1,7 +1,7 @@
 import { isValidIban, normalizeIban } from './spayd'
 
 // The account in the form Czech banking apps and people use: prefix-number/bank,
-// without leading zeros ("19-2000145399/0800"), from the IBAN
+// without leading zeros ("12-345678/9999"), from the IBAN
 // CZkk BBBB PPPPPP CCCCCCCCCC.
 export function czechAccountNumber(iban: string): string {
   const value = normalizeIban(iban)

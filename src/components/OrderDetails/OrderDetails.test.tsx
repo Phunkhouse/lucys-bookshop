@@ -4,8 +4,9 @@ import { renderWithIntl } from '@/lib/render-with-intl'
 import type { OrderView } from '@/server/order-view'
 import type { PaymentInstructions } from '@/server/payment-instructions'
 import { OrderDetails } from './OrderDetails'
+import { groupIban, TEST_ACCOUNT_DISPLAY, TEST_IBAN } from '@/server/test-iban'
 
-const IBAN = 'CZ6508000000192000145399'
+const IBAN = TEST_IBAN
 
 const view: OrderView = {
   number: 20260042,
@@ -29,7 +30,7 @@ const ready: PaymentInstructions = {
   status: 'ready',
   spayd: `SPD*1.0*ACC:${IBAN}*AM:667.00*CC:CZK*X-VS:20260042*MSG:OBJEDNAVKA 20260042`,
   iban: IBAN,
-  account: '19-2000145399/0800',
+  account: TEST_ACCOUNT_DISPLAY,
   amountMinor: 66700,
   variableSymbol: '20260042',
 }
@@ -66,10 +67,8 @@ describe('OrderDetails', () => {
         screen.getByRole('img', { name: 'QR kód pro platbu' }),
       ).toBeDefined()
       const pay = screen.getByRole('region', { name: 'Zaplaťte převodem' })
-      expect(within(pay).getByText('19-2000145399/0800')).toBeDefined()
-      expect(
-        within(pay).getByText('CZ65 0800 0000 1920 0014 5399'),
-      ).toBeDefined()
+      expect(within(pay).getByText(TEST_ACCOUNT_DISPLAY)).toBeDefined()
+      expect(within(pay).getByText(groupIban(IBAN))).toBeDefined()
       expect(within(pay).getByText(/^667\s*Kč$/)).toBeDefined()
       expect(within(pay).getByText('20260042')).toBeDefined()
     })
@@ -97,7 +96,7 @@ describe('OrderDetails', () => {
     it('shows the details without a QR code when there is nothing to pay', () => {
       renderOrder({ totalMinor: 0 }, { ...ready, spayd: null, amountMinor: 0 })
       expect(screen.queryByRole('img')).toBeNull()
-      expect(screen.getByText('19-2000145399/0800')).toBeDefined()
+      expect(screen.getByText(TEST_ACCOUNT_DISPLAY)).toBeDefined()
     })
   })
 

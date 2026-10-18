@@ -3,6 +3,7 @@ import jsQR from 'jsqr'
 import { describe, expect, it } from 'vitest'
 import { qrMatrix } from './qr-matrix'
 import { QrCode } from './QrCode'
+import { TEST_IBAN } from '@/server/test-iban'
 
 // Reads the matrix back the way a phone would, from pixels.
 function decode(matrix: boolean[][]) {
@@ -26,8 +27,7 @@ function decode(matrix: boolean[][]) {
   return jsQR(pixels, size, size)?.data ?? null
 }
 
-const SPAYD =
-  'SPD*1.0*ACC:CZ6508000000192000145399*AM:667.00*CC:CZK*X-VS:20260042*MSG:OBJEDNAVKA 20260042'
+const SPAYD = `SPD*1.0*ACC:${TEST_IBAN}*AM:667.00*CC:CZK*X-VS:20260042*MSG:OBJEDNAVKA 20260042`
 
 describe('qrMatrix', () => {
   it('encodes the payment string so that a scanner reads exactly it back', () => {
@@ -37,8 +37,8 @@ describe('qrMatrix', () => {
   it('reads back strings of different lengths and with a different amount', () => {
     const other = SPAYD.replace('667.00', '0.05')
     expect(decode(qrMatrix(other))).toBe(other)
-    expect(decode(qrMatrix('SPD*1.0*ACC:CZ6508000000192000145399'))).toBe(
-      'SPD*1.0*ACC:CZ6508000000192000145399',
+    expect(decode(qrMatrix(`SPD*1.0*ACC:${TEST_IBAN}`))).toBe(
+      `SPD*1.0*ACC:${TEST_IBAN}`,
     )
   })
 

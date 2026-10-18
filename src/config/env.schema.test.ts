@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { parseDatabaseEnv, parseEnv } from './env.schema'
+import {
+  breakChecksum,
+  groupIban,
+  makeIban,
+  TEST_IBAN,
+} from '@/server/test-iban'
 
 const valid = {
   DATABASE_URL: 'postgres://user:pass@127.0.0.1:5432/db',
@@ -31,12 +37,11 @@ describe('parseEnv', () => {
 
     it('accepts a Czech IBAN, also written with spaces', () => {
       expect(
-        parseEnv({ ...valid, SELLER_IBAN: 'CZ65 0800 0000 1920 0014 5399' })
-          .SELLER_IBAN,
-      ).toBe('CZ6508000000192000145399')
+        parseEnv({ ...valid, SELLER_IBAN: groupIban(TEST_IBAN) }).SELLER_IBAN,
+      ).toBe(TEST_IBAN)
     })
 
-    it.each(['CZ6508000000192000145390', 'DE89370400440532013000', 'abc'])(
+    it.each([breakChecksum(TEST_IBAN), makeIban('DE', '0'.repeat(18)), 'abc'])(
       'refuses %s',
       (SELLER_IBAN) => {
         expect(() => parseEnv({ ...valid, SELLER_IBAN })).toThrow(/SELLER_IBAN/)

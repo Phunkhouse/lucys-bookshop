@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { paymentInstructions } from './payment-instructions'
+import { TEST_ACCOUNT_DISPLAY, TEST_IBAN } from './test-iban'
 
-const IBAN = 'CZ6508000000192000145399'
+const IBAN = TEST_IBAN
 const order = {
   number: 20260042,
   totalMinor: 66700,
@@ -15,7 +16,7 @@ describe('paymentInstructions', () => {
       status: 'ready',
       spayd: `SPD*1.0*ACC:${IBAN}*AM:667.00*CC:CZK*X-VS:20260042*MSG:OBJEDNAVKA 20260042`,
       iban: IBAN,
-      account: '19-2000145399/0800',
+      account: TEST_ACCOUNT_DISPLAY,
       amountMinor: 66700,
       variableSymbol: '20260042',
     })
