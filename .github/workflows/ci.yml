@@ -99,8 +99,8 @@ jobs:
       # Throwaway values for this run only; they protect nothing.
       BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
       BETTER_AUTH_URL: http://localhost:3000
-      # The local S3-compatible server started below (the e2e job only builds, so it
-      # needs the settings but no running server). A well-known login, not a secret.
+      # The local S3-compatible server started below, for the photo upload in the
+      # admin flow. A well-known login, not a secret.
       STORAGE_ENDPOINT: http://127.0.0.1:9000
       STORAGE_BUCKET: bookshop
       STORAGE_ACCESS_KEY_ID: localdev
@@ -116,6 +116,23 @@ jobs:
         with:
           runtime: node@24
           cache: true
+
+      # A throwaway S3-compatible server for the photo upload, the same image and
+      # login as docker-compose.yml. A service container cannot take the start
+      # command, so it is started here.
+      - name: Start the local photo storage
+        run: |
+          docker run -d --name storage -p 127.0.0.1:9000:8333 \
+            -v "$PWD/docker/storage/s3.json:/etc/seaweedfs/s3.json:ro" \
+            chrislusf/seaweedfs:4.48 \
+            server -s3 -s3.config=/etc/seaweedfs/s3.json -dir=/data
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:9000/ || true)
+            if [ "$code" != "000" ]; then exit 0; fi
+            sleep 1
+          done
+          docker logs storage
+          exit 1
 
       - run: pnpm db:migrate
       - run: pnpm exec playwright install --with-deps chromium
