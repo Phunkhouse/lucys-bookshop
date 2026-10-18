@@ -166,7 +166,10 @@ export async function refundOrder(
 
 // Extends a waiting cash on pickup reservation by 48 hours (spec 6.4). If the
 // deadline has passed, the books are re-reserved, unless someone else took one:
-// then nothing changes and the conflict is reported.
+// then nothing changes and the conflict is reported. A book whose lapsed
+// reservation belonged to another order is free by the lazy-expiry rule, so it
+// is taken over and that order's reservedByOrderId link is overwritten, as in
+// checkout and markOrderPaid.
 export async function extendReservation(
   _actor: AdminActor,
   id: string,
@@ -267,7 +270,10 @@ export async function markCompleted(
 }
 
 // The seller's free-text note (underpayment, a wrong variable symbol, ...).
-// Allowed in every status. An empty note clears it.
+// Allowed in every status. An empty note clears it. A plain UPDATE without the
+// order lock on purpose: it writes only `note`, so it cannot race with the
+// status logic. Keep it that way: anything touching status or books belongs
+// in a locked transaction like the actions above.
 export async function setOrderNote(
   _actor: AdminActor,
   id: string,
