@@ -2,6 +2,7 @@ import { useFormatter, useLocale, useTranslations } from 'next-intl'
 import { Badge } from '@/components/Badge'
 import { Link } from '@/i18n/navigation'
 import { formatRelativeTime } from '@/lib/relative-time'
+import { SHOP_TIME_ZONE } from '@/lib/shop-time-zone'
 import type { AdminOrderItem } from '@/server/admin/order-list'
 import css from './AdminOrderRow.module.scss'
 
@@ -57,7 +58,11 @@ export function AdminOrderRow({ order, now }: AdminOrderRowProps) {
       <p className={css.placed}>
         <time
           dateTime={order.createdAt.toISOString()}
-          title={order.createdAt.toLocaleString(locale)}
+          title={format.dateTime(order.createdAt, {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+            timeZone: SHOP_TIME_ZONE,
+          })}
         >
           {t('placed', {
             when: formatRelativeTime(order.createdAt, now, locale),

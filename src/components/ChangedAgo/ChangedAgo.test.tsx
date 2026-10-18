@@ -28,4 +28,15 @@ describe('ChangedAgo', () => {
       date.toISOString(),
     )
   })
+
+  // The page renders on a server in another time zone than the shop's.
+  it('shows the exact time on the shop clock, not the server clock', () => {
+    // 22:30 UTC is already the next day in Prague.
+    const date = new Date('2026-10-04T22:30:00.000Z')
+    const { container } = renderWithIntl(<ChangedAgo date={date} now={now} />)
+
+    expect(container.querySelector('time')?.getAttribute('title')).toMatch(
+      /5\. 10\. 2026.*0:30/,
+    )
+  })
 })

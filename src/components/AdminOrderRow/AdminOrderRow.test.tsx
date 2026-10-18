@@ -77,4 +77,15 @@ describe('AdminOrderRow', () => {
 
     expect(screen.getByText(label)).toBeTruthy()
   })
+
+  it('shows the exact time on the shop clock, not the server clock', () => {
+    // 22:30 UTC is already the next day in Prague.
+    const { container } = render({
+      createdAt: new Date('2026-10-04T22:30:00.000Z'),
+    })
+
+    expect(container.querySelector('time')?.getAttribute('title')).toMatch(
+      /5\. 10\. 2026.*0:30/,
+    )
+  })
 })
