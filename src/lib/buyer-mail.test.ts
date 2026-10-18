@@ -54,6 +54,18 @@ describe('mailtoHref', () => {
 
   // The tracking number and the buyer's name end up in the text. Whatever they
   // contain must stay inside the body and never add a header.
+  // A subject is a header: a line break in it is never valid.
+  it('keeps the subject on one line', () => {
+    const href = mailtoHref({
+      to: 'a@b.cz',
+      subject: 'První\r\nDruhý\n  třetí',
+      body: 'b',
+    })
+
+    expect(parts(href).subject).toBe('První Druhý třetí')
+    expect(href).not.toMatch(/subject=[^&]*%0[AD]/)
+  })
+
   it('cannot add a header through the subject or the body', () => {
     const href = mailtoHref({
       to: 'a@b.cz',

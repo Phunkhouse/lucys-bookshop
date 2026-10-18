@@ -1,5 +1,11 @@
 import { displayStatus, type AvailabilityFields } from './availability'
-import type { ConflictBook } from './payments'
+import type { UnavailableReason } from './reservations'
+
+export type ConflictBook = {
+  id: string
+  title: string
+  reason: Exclude<UnavailableReason, 'not_found'>
+}
 
 export type HeldBook = AvailabilityFields & {
   id: string

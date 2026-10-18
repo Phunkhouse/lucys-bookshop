@@ -333,7 +333,10 @@
             "subject": "Objednávka č. {number}: odesláno",
             "body": "Dobrý den, {name},\n\nobjednávka č. {number} byla odeslána přes Zásilkovnu. Číslo zásilky: {tracking}\n\n{signature}"
           }
-        }
+        },
+        "name": "Jméno",
+        "method": "Způsob",
+        "notGiven": "Neuvedeno"
       }
     }
   },

@@ -2,14 +2,9 @@ import { asc, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from './db/client'
 import { books, orderItems, orders } from './db/schema'
-import { conflictingBooks } from './order-conflicts'
-import type { UnavailableReason } from './reservations'
+import { conflictingBooks, type ConflictBook } from './order-conflicts'
 
-export type ConflictBook = {
-  id: string
-  title: string
-  reason: Exclude<UnavailableReason, 'not_found'>
-}
+export type { ConflictBook }
 
 export type ConfirmResult =
   // This call made the order paid and sold its books.

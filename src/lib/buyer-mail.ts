@@ -17,7 +17,9 @@ export function mailtoHref({
   if (subject === undefined && body === undefined) return `mailto:${address}`
   const encode = (text: string) =>
     encodeURIComponent(text.replace(/\r?\n/g, '\r\n'))
-  return `mailto:${address}?subject=${encode(subject ?? '')}&body=${encode(body ?? '')}`
+  // A subject is a header, so it stays on one line whatever it contains.
+  const oneLine = (subject ?? '').replace(/\s+/g, ' ').trim()
+  return `mailto:${address}?subject=${encodeURIComponent(oneLine)}&body=${encode(body ?? '')}`
 }
 
 export type BuyerMessageKind = 'reminder' | 'paid' | 'shipped'

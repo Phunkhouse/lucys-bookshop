@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { AdminActor } from '@/server/auth/require-admin'
 import { db } from '@/server/db/client'
 import { books, orderItems, orders } from '@/server/db/schema'
-import { conflictingBooks } from '@/server/order-conflicts'
+import { conflictingBooks, type ConflictBook } from '@/server/order-conflicts'
 import {
   canExtend,
   canTransition,
@@ -11,7 +11,6 @@ import {
   normalizeNote,
   normalizeTrackingNumber,
 } from '@/server/order-transitions'
-import type { ConflictBook } from '@/server/payments'
 import type { DbTransaction } from '@/server/reservations'
 
 // The admin's order actions (spec 6.4, 6.7, 6.9). Every one follows the same

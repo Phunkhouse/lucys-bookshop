@@ -105,6 +105,19 @@ describe('AdminOrderDetail', () => {
     expect(screen.getByText('Z123456789')).toBeTruthy()
   })
 
+  it('says so when a Zásilkovna order has no pickup point', () => {
+    render({ shippingMethod: 'zasilkovna', shippingDetails: null })
+
+    expect(screen.getByText('Neuvedeno')).toBeTruthy()
+  })
+
+  it('shows a phone number without digits as plain text, not a dead link', () => {
+    render({ phone: 'není' })
+
+    expect(screen.getByText('není')).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'není' })).toBeNull()
+  })
+
   it('shows neither for a personal pickup', () => {
     render({ shippingMethod: 'pickup' })
 

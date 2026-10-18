@@ -2,13 +2,12 @@ import { asc, eq, inArray } from 'drizzle-orm'
 import type { AdminActor } from '@/server/auth/require-admin'
 import { db } from '@/server/db/client'
 import { books, orderItems, orders } from '@/server/db/schema'
-import { conflictingBooks } from '@/server/order-conflicts'
+import { conflictingBooks, type ConflictBook } from '@/server/order-conflicts'
 import {
   isExpiringSoon,
   orderStage,
   type OrderStage,
 } from '@/server/order-stage'
-import type { ConflictBook } from '@/server/payments'
 
 export type AdminOrderDetail = {
   id: string
@@ -39,6 +38,12 @@ export type AdminOrderDetail = {
 
 // The order behind an admin link, or null. Read-only: the actions come with
 // the admin order buttons.
+//
+// The order, its items and its books are read separately, outside one
+// transaction, so `conflicts` is advisory: it is how things looked a moment
+// ago. The actions that change the order re-check under row locks and have the
+// last word. The actor is the proof that the caller went through requireAdmin(),
+// even though nothing here reads it.
 export async function getAdminOrder(
   _actor: AdminActor,
   number: number,

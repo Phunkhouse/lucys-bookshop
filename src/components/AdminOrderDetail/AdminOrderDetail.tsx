@@ -27,7 +27,11 @@ const tone = {
 } as const
 
 // A phone number for a tel: link: digits and a leading plus, nothing else.
-const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`
+// Null when there is nothing to dial.
+const telHref = (phone: string) => {
+  const dialable = phone.replace(/[^\d+]/g, '')
+  return /\d/.test(dialable) ? `tel:${dialable}` : null
+}
 
 // What the seller sees about one order (spec 6.9). Read-only: the buttons that
 // change the order come separately. Works the same in a server component and
@@ -50,6 +54,7 @@ export function AdminOrderDetail({
       timeStyle: 'short',
       timeZone: SHOP_TIME_ZONE,
     })
+  const phoneHref = telHref(order.phone)
   const waiting = order.stage === 'awaiting_payment'
   const expired = order.stage === 'expired'
 
@@ -138,15 +143,19 @@ export function AdminOrderDetail({
       <section className={css.section} aria-labelledby="order-buyer">
         <h2 id="order-buyer">{td('buyer')}</h2>
         <dl className={css.facts}>
-          <dt>{td('buyer')}</dt>
+          <dt>{td('name')}</dt>
           <dd>{order.name}</dd>
           <dt>{td('email')}</dt>
           <dd>{order.email}</dd>
           <dt>{td('phone')}</dt>
           <dd>
-            <a href={telHref(order.phone)} className={css.tap}>
-              {order.phone}
-            </a>
+            {phoneHref ? (
+              <a href={phoneHref} className={css.tap}>
+                {order.phone}
+              </a>
+            ) : (
+              order.phone
+            )}
           </dd>
         </dl>
         <a href={mailHref} className={css.action}>
@@ -157,12 +166,12 @@ export function AdminOrderDetail({
       <section className={css.section} aria-labelledby="order-delivery">
         <h2 id="order-delivery">{td('delivery')}</h2>
         <dl className={css.facts}>
-          <dt>{td('delivery')}</dt>
+          <dt>{td('method')}</dt>
           <dd>{t(`shipping.${order.shippingMethod}`)}</dd>
           {order.shippingMethod === 'zasilkovna' && (
             <>
               <dt>{td('pickupPoint')}</dt>
-              <dd>{order.shippingDetails}</dd>
+              <dd>{order.shippingDetails || td('notGiven')}</dd>
               {order.trackingNumber && (
                 <>
                   <dt>{td('tracking')}</dt>
