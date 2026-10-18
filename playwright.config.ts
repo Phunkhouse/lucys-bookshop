@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { TEST_IBAN } from './src/server/test-iban'
 
 export default defineConfig({
   testDir: './e2e',
@@ -15,6 +16,9 @@ export default defineConfig({
     command: process.env.CI ? 'pnpm build && pnpm start' : 'pnpm dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
+    // The seller's account for the QR code on the order page: a made-up one,
+    // built at run time. A server that was already running keeps its own.
+    env: { SELLER_IBAN: TEST_IBAN },
     timeout: 120_000,
   },
 })
