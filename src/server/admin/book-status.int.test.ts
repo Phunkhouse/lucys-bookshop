@@ -4,7 +4,11 @@ import { isAvailableSql } from '@/server/availability-sql'
 import { testActor } from '@/server/auth/test-helpers'
 import { db } from '@/server/db/client'
 import { books } from '@/server/db/schema'
-import { createBook, resetDatabase } from '@/server/db/test-helpers'
+import {
+  createBook,
+  createOrder,
+  resetDatabase,
+} from '@/server/db/test-helpers'
 import { setBookHidden } from './book-status'
 
 const now = new Date('2026-10-09T12:00:00.000Z')
@@ -46,6 +50,20 @@ describe('hiding a book', () => {
     const row = await load(book.id)
     expect(row.status).toBe('hidden')
     expect(row.reservedUntil).toBeNull()
+  })
+
+  it('clears the order that held an expired reservation', async () => {
+    const actor = await testActor()
+    const order = await createOrder()
+    const book = await createBook({
+      status: 'reserved',
+      reservedUntil: at(-HOUR),
+      reservedByOrderId: order.id,
+    })
+
+    await setBookHidden(actor, book.id, true, now)
+
+    expect((await load(book.id)).reservedByOrderId).toBeNull()
   })
 
   it('treats a reservation ending exactly now as still reserved, and 1 ms later as expired', async () => {

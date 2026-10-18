@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { AdminActor } from '@/server/auth/require-admin'
 import { displayStatus } from '@/server/availability'
 import { db } from '@/server/db/client'
-import { bookImages, books } from '@/server/db/schema'
+import { bookImages, books, orderItems } from '@/server/db/schema'
 
 export type DeleteBookResult =
   | {
@@ -15,8 +15,7 @@ export type DeleteBookResult =
     }
   | {
       outcome: 'refused'
-      // has_orders is for M3: an order item will point at the book with a
-      // restricting foreign key, and the database refusing becomes this reason.
+      // has_orders: an order item points at the book (restricting foreign key).
       reason: 'not_hidden' | 'reserved' | 'sold' | 'has_orders' | 'not_found'
     }
 
@@ -57,6 +56,16 @@ export async function deleteBook(
     // An available book, or one whose reservation has expired.
     if (current !== 'hidden')
       return { outcome: 'refused', reason: 'not_hidden' }
+
+    // The book row is locked, and an order item being added takes a share lock
+    // on it, so this answer cannot change before the delete. The foreign key
+    // would refuse anyway; asking first gives a reason instead of an error.
+    const [ordered] = await tx
+      .select({ id: orderItems.id })
+      .from(orderItems)
+      .where(eq(orderItems.bookId, id))
+      .limit(1)
+    if (ordered) return { outcome: 'refused', reason: 'has_orders' }
 
     const images = await tx
       .select({ baseKey: bookImages.baseKey })

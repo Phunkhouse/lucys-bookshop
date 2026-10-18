@@ -2,11 +2,18 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { testActor } from '@/server/auth/test-helpers'
 import { db } from '@/server/db/client'
-import { bookGenres, bookImages, books, genres } from '@/server/db/schema'
+import {
+  bookGenres,
+  bookImages,
+  books,
+  genres,
+  orderItems,
+} from '@/server/db/schema'
 import {
   addImage,
   createBook,
   createGenre,
+  createOrder,
   linkGenre,
   resetDatabase,
 } from '@/server/db/test-helpers'
@@ -111,6 +118,26 @@ describe('deleteBook', () => {
       expect(await db.select().from(bookImages)).toHaveLength(1)
     },
   )
+
+  it('refuses a hidden book that an order points at, and changes nothing', async () => {
+    const actor = await testActor()
+    const book = await createBook({ status: 'hidden' })
+    await addImage(book.id, 0)
+    const order = await createOrder({ status: 'cancelled' })
+    await db.insert(orderItems).values({
+      orderId: order.id,
+      bookId: book.id,
+      titleSnapshot: book.title,
+      priceMinorSnapshot: book.priceMinor,
+    })
+
+    expect(await deleteBook(actor, book.id, now)).toEqual({
+      outcome: 'refused',
+      reason: 'has_orders',
+    })
+    expect(await load(book.id)).toBeDefined()
+    expect(await db.select().from(bookImages)).toHaveLength(1)
+  })
 
   it('answers not_found for an unknown or malformed id, without throwing', async () => {
     const actor = await testActor()

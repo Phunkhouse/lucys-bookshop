@@ -37,7 +37,11 @@ export async function setBookHidden(
     const updated = hidden
       ? await db
           .update(books)
-          .set({ status: 'hidden', reservedUntil: null })
+          .set({
+            status: 'hidden',
+            reservedUntil: null,
+            reservedByOrderId: null,
+          })
           .where(and(eq(books.id, id), isAvailableSql(now)))
           .returning({ id: books.id })
       : await db
