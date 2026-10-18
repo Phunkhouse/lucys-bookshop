@@ -96,6 +96,28 @@ describe('CartView', () => {
     ).toBe('/books/aaaaaa11/prvni-kniha')
   })
 
+  it('leads on to the checkout once the cart has been checked', async () => {
+    store([{ shortId: 'aaaaaa11', priceMinorSeen: 18900 }])
+    renderCart(
+      vi.fn().mockResolvedValue(answer([ok('aaaaaa11', 'První kniha', 18900)])),
+    )
+
+    expect(
+      screen.queryByRole('link', { name: 'Pokračovat k objednávce' }),
+    ).toBeNull()
+    const link = await screen.findByRole('link', {
+      name: 'Pokračovat k objednávce',
+    })
+    expect(link.getAttribute('href')).toBe('/checkout')
+  })
+
+  it('has no way to the checkout for an empty cart', () => {
+    renderCart(vi.fn())
+    expect(
+      screen.queryByRole('link', { name: 'Pokračovat k objednávce' }),
+    ).toBeNull()
+  })
+
   it('removes a book from the cart and the page', async () => {
     store([
       { shortId: 'aaaaaa11', priceMinorSeen: 18900 },

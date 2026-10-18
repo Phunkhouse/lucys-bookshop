@@ -83,6 +83,7 @@
     "priceChanged": "Cena se změnila: dříve {before}, nyní {now}.",
     "acceptPrice": "Souhlasím s novou cenou",
     "subtotal": "Mezisoučet (bez dopravy)",
+    "checkout": "Pokračovat k objednávce",
     "removed": {
       "heading": "Z košíku jsme odebrali:",
       "reserved": "{title} – mezitím ji rezervoval někdo jiný.",
@@ -296,6 +297,50 @@
       "shipping_unavailable": "Doprava Zásilkovnou teď není k dispozici. Zvolte osobní odběr.",
       "invalid": "Objednávku se nepodařilo odeslat. Zkontrolujte vyplněné údaje.",
       "generic": "Objednávku se nepodařilo odeslat. Zkuste to prosím znovu."
+    }
+  },
+  "Order": {
+    "pageTitle": "Objednávka",
+    "title": "Objednávka č. {number}",
+    "stage": {
+      "awaiting_payment": "Čeká na platbu",
+      "awaiting_cash": "Rezervováno, zaplatíte při převzetí",
+      "expired": "Rezervace vypršela",
+      "paid": "Zaplaceno, děkujeme",
+      "shipped": "Odesláno",
+      "completed": "Vyřízeno",
+      "cancelled": "Zrušeno",
+      "refunded": "Peníze jsme vrátili"
+    },
+    "pay": {
+      "heading": "Zaplaťte převodem",
+      "scan": "Naskenujte QR kód v bankovní aplikaci, nebo údaje opište.",
+      "qrLabel": "QR kód pro platbu",
+      "account": "Číslo účtu",
+      "iban": "IBAN",
+      "amount": "Částka",
+      "variableSymbol": "Variabilní symbol",
+      "notConfigured": "Platební údaje nejsou zatím nastavené. Prodávající se vám ozve."
+    },
+    "cash": {
+      "heading": "Platba hotově",
+      "text": "Zaplatíte při osobním převzetí.",
+      "pickup": "Osobní odběr"
+    },
+    "deadline": "Knihy máme rezervované do {date}. Bez zaplacení je potom uvolníme.",
+    "deadlineCash": "Knihy máme rezervované do {date}.",
+    "keepPage": "Uložte si tuto stránku do záložek nebo ji vyfoťte. Potvrzení e-mailem neposíláme.",
+    "expiredText": "Pokud jste už zaplatili, prodávající to uvidí na účtu a ozve se vám.",
+    "paidPickup": "Prodávající se vám ozve ohledně převzetí.",
+    "paidShipping": "Balík odešleme Zásilkovnou.",
+    "shippedTracking": "Sledovací číslo: {tracking}",
+    "shippedNoTracking": "Balík je na cestě.",
+    "summary": {
+      "heading": "Co jste objednali",
+      "shipping": "Doprava",
+      "shippingFree": "zdarma",
+      "total": "Celkem",
+      "pickupPoint": "Výdejní místo: {point}"
     }
   }
 }

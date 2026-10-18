@@ -21,6 +21,29 @@ describe('parseEnv', () => {
     })
   })
 
+  describe('SELLER_IBAN', () => {
+    it('is optional: the shop starts without it, bank orders then show no payment details', () => {
+      expect(parseEnv(valid).SELLER_IBAN).toBeUndefined()
+      expect(
+        parseEnv({ ...valid, SELLER_IBAN: '' }).SELLER_IBAN,
+      ).toBeUndefined()
+    })
+
+    it('accepts a Czech IBAN, also written with spaces', () => {
+      expect(
+        parseEnv({ ...valid, SELLER_IBAN: 'CZ65 0800 0000 1920 0014 5399' })
+          .SELLER_IBAN,
+      ).toBe('CZ6508000000192000145399')
+    })
+
+    it.each(['CZ6508000000192000145390', 'DE89370400440532013000', 'abc'])(
+      'refuses %s',
+      (SELLER_IBAN) => {
+        expect(() => parseEnv({ ...valid, SELLER_IBAN })).toThrow(/SELLER_IBAN/)
+      },
+    )
+  })
+
   it('throws when DATABASE_URL is missing', () => {
     expect(() => parseEnv({ ...valid, DATABASE_URL: undefined })).toThrow(
       /DATABASE_URL/,
