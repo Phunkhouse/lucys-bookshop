@@ -1,8 +1,15 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from './client'
-import { bookGenres, bookImages, books, genres } from './schema'
-import { resetDatabase } from './test-helpers'
+import {
+  bookGenres,
+  bookImages,
+  books,
+  genres,
+  orderItems,
+  orders,
+} from './schema'
+import { createBook, createOrder, resetDatabase } from './test-helpers'
 
 const validBook = {
   shortId: 'abc12345',
@@ -126,5 +133,100 @@ describe('related tables', () => {
     expect(
       await violatedConstraint(db.insert(bookImages).values(image(0))),
     ).toBe('book_images_book_id_position_unique')
+  })
+})
+
+describe('orders tables', () => {
+  it('accepts an order and fills in the defaults', async () => {
+    const order = await createOrder()
+    expect(order.status).toBe('pending_payment')
+    expect(order.currency).toBe('CZK')
+    expect(order.locale).toBe('cs')
+    expect(order.paidAt).toBeNull()
+    expect(order.createdAt).toBeInstanceOf(Date)
+  })
+
+  it.each([
+    ['a zero order number', { number: 0 }, 'orders_number_format'],
+    ['a negative total', { totalMinor: -1 }, 'orders_amounts_not_negative'],
+    [
+      'a negative shipping cost',
+      { shippingCostMinor: -1 },
+      'orders_amounts_not_negative',
+    ],
+    ['a lowercase currency', { currency: 'czk' }, 'orders_currency_format'],
+    [
+      'a paid order without a payment date',
+      { status: 'paid' as const },
+      'orders_paid_has_date',
+    ],
+    [
+      'a shipped order without a payment date',
+      { status: 'shipped' as const },
+      'orders_paid_has_date',
+    ],
+  ])('rejects %s', async (_name, change, constraint) => {
+    expect(await violatedConstraint(createOrder(change))).toBe(constraint)
+  })
+
+  it('accepts a paid order with a payment date, and a cancelled one without', async () => {
+    await createOrder({ status: 'paid', paidAt: new Date() })
+    await createOrder({ status: 'cancelled' })
+  })
+
+  it('rejects a second order with the same number or token', async () => {
+    const first = await createOrder()
+    expect(
+      await violatedConstraint(createOrder({ number: first.number })),
+    ).toBe('orders_number_key')
+    expect(
+      await violatedConstraint(createOrder({ publicToken: first.publicToken })),
+    ).toBe('orders_public_token_key')
+  })
+
+  it('lets a book be reserved by an order, and rejects an unknown order', async () => {
+    const order = await createOrder()
+    const book = await createBook({
+      status: 'reserved',
+      reservedUntil: order.expiresAt,
+      reservedByOrderId: order.id,
+    })
+    expect(book.reservedByOrderId).toBe(order.id)
+
+    const write = createBook({
+      reservedByOrderId: '00000000-0000-4000-8000-000000000000',
+    })
+    expect(await violatedConstraint(write)).toBe(
+      'books_reserved_by_order_id_orders_id_fkey',
+    )
+  })
+
+  it('keeps a book in an order once, and refuses to delete a book or order that is in use', async () => {
+    const order = await createOrder()
+    const book = await createBook()
+    const item = {
+      orderId: order.id,
+      bookId: book.id,
+      titleSnapshot: book.title,
+      priceMinorSnapshot: book.priceMinor,
+    }
+    await db.insert(orderItems).values(item)
+
+    expect(await violatedConstraint(db.insert(orderItems).values(item))).toBe(
+      'order_items_order_id_book_id_unique',
+    )
+    expect(
+      await violatedConstraint(
+        db.insert(orderItems).values({ ...item, priceMinorSnapshot: -1 }),
+      ),
+    ).toBeDefined()
+    expect(
+      await violatedConstraint(db.delete(books).where(eq(books.id, book.id))),
+    ).toBe('order_items_book_id_books_id_fkey')
+    expect(
+      await violatedConstraint(
+        db.delete(orders).where(eq(orders.id, order.id)),
+      ),
+    ).toBe('order_items_order_id_orders_id_fkey')
   })
 })

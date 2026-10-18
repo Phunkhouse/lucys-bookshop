@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import {
+  type AnyPgColumn,
   check,
   index,
   integer,
@@ -43,6 +44,11 @@ export const books = pgTable(
     status: bookStatus('status').notNull().default('available'),
     // A reserved book whose reservedUntil has passed counts as available (lazy expiry).
     reservedUntil: timestamp('reserved_until', { withTimezone: true }),
+    // The order that holds the reservation. Stale once the reservation expires
+    // (lazy expiry), and nullable because seed and admin data reserve without an order.
+    reservedByOrderId: uuid('reserved_by_order_id').references(
+      (): AnyPgColumn => orders.id,
+    ),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -55,6 +61,7 @@ export const books = pgTable(
   (t) => [
     index().on(t.status),
     index().on(t.reservedUntil),
+    index().on(t.reservedByOrderId),
     index().on(t.soldAt),
     index().on(t.priceMinor),
     index().on(t.isbn),
@@ -119,3 +126,97 @@ export const bookImages = pgTable(
 )
 
 export * from './auth-schema'
+
+export const orderStatus = pgEnum('order_status', [
+  'pending_payment',
+  'paid',
+  'shipped',
+  'completed',
+  'cancelled',
+  'refunded',
+])
+
+export const paymentMethod = pgEnum('payment_method', [
+  'bank_transfer',
+  'cash_on_pickup',
+])
+
+export const shippingMethod = pgEnum('shipping_method', [
+  'pickup',
+  'zasilkovna',
+])
+
+// Created at checkout (M4); this table only exists in M3 so reservations have
+// something to point at. An order is a snapshot: later edits to a book never
+// change it (spec 6.7).
+export const orders = pgTable(
+  'orders',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // Human-readable, year plus sequence (20260001). Also the variable symbol,
+    // so digits only and at most 10 of them.
+    number: integer('number').notNull().unique(),
+    // Unguessable, in the buyer's order page link (/order/<token>).
+    publicToken: text('public_token').notNull().unique(),
+    status: orderStatus('status').notNull().default('pending_payment'),
+    paymentMethod: paymentMethod('payment_method').notNull(),
+    email: text('email').notNull(),
+    name: text('name').notNull(),
+    phone: text('phone').notNull(),
+    shippingMethod: shippingMethod('shipping_method').notNull(),
+    // Pickup point typed by the buyer for Zásilkovna; empty for personal pickup.
+    shippingDetails: text('shipping_details'),
+    // Integer minor units (haléře), never floats.
+    shippingCostMinor: integer('shipping_cost_minor').notNull(),
+    totalMinor: integer('total_minor').notNull(),
+    currency: text('currency').notNull().default('CZK'),
+    locale: text('locale').notNull().default('cs'),
+    // End of the 48 h reservation (extended by the seller for cash on pickup).
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    sellerRemindedAt: timestamp('seller_reminded_at', { withTimezone: true }),
+    trackingNumber: text('tracking_number'),
+    note: text('note'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+  },
+  (t) => [
+    index().on(t.status),
+    index().on(t.expiresAt),
+    index().on(t.createdAt),
+    check('orders_number_format', sql`${t.number} BETWEEN 1 AND 2147483647`),
+    check(
+      'orders_amounts_not_negative',
+      sql`${t.shippingCostMinor} >= 0 AND ${t.totalMinor} >= 0`,
+    ),
+    check('orders_currency_format', sql`${t.currency} ~ '^[A-Z]{3}$'`),
+    // Without this, a paid order could exist with no record of when.
+    check(
+      'orders_paid_has_date',
+      sql`${t.status} NOT IN ('paid', 'shipped', 'completed') OR ${t.paidAt} IS NOT NULL`,
+    ),
+  ],
+)
+
+export const orderItems = pgTable(
+  'order_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id),
+    // Restricting on purpose: a book that was ever ordered cannot be deleted (spec 6.9).
+    bookId: uuid('book_id')
+      .notNull()
+      .references(() => books.id),
+    titleSnapshot: text('title_snapshot').notNull(),
+    priceMinorSnapshot: integer('price_minor_snapshot').notNull(),
+  },
+  (t) => [
+    // One copy, one line: a book is in an order at most once.
+    unique().on(t.orderId, t.bookId),
+    index().on(t.bookId),
+    check('order_items_price_not_negative', sql`${t.priceMinorSnapshot} >= 0`),
+  ],
+)
