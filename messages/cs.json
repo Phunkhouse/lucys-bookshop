@@ -7,8 +7,10 @@
     "intro": "Knihy, které jsem dočetla, hledají nový domov. Každá je jen jedna."
   },
   "Nav": {
+    "label": "Hlavní navigace",
     "catalog": "Knihy",
-    "cart": "Košík"
+    "cart": "Košík",
+    "cartCount": "Košík: {count, plural, one {# kniha} few {# knihy} other {# knih}}"
   },
   "Genres": {
     "novel": "Román",
@@ -42,16 +44,19 @@
       "back": "Zpět na knihy",
       "addToCart": "Přidat do košíku",
       "message": {
-        "available": "Košík bude brzy k dispozici.",
         "reserved": "Tato kniha je právě rezervovaná pro jiného zákazníka.",
-        "sold": "Tato kniha už byla prodána {date}."
+        "sold": "Tato kniha už byla prodána {date}.",
+        "inCart": "Kniha je v košíku.",
+        "cartFull": "Košík je plný. Nejdřív některou knihu odeberte."
       },
       "fields": {
         "condition": "Stav",
         "language": "Jazyk",
         "genres": "Žánry",
         "isbn": "ISBN"
-      }
+      },
+      "removeFromCart": "Odebrat z košíku",
+      "viewCart": "Zobrazit košík"
     },
     "photos": {
       "galleryLabel": "Fotky knihy",
@@ -61,6 +66,29 @@
       "next": "Další",
       "previousLabel": "Předchozí fotka",
       "nextLabel": "Další fotka"
+    }
+  },
+  "Cart": {
+    "title": "Košík",
+    "loading": "Kontroluji košík…",
+    "failed": "Košík se nepodařilo zkontrolovat. Zkuste to prosím znovu.",
+    "retry": "Zkusit znovu",
+    "empty": {
+      "title": "Košík je prázdný.",
+      "hint": "Vyberte si něco z nabídky.",
+      "browse": "Zpět na knihy"
+    },
+    "remove": "Odebrat",
+    "removeLabel": "Odebrat z košíku: {title}",
+    "priceChanged": "Cena se změnila: dříve {before}, nyní {now}.",
+    "acceptPrice": "Souhlasím s novou cenou",
+    "subtotal": "Mezisoučet (bez dopravy)",
+    "removed": {
+      "heading": "Z košíku jsme odebrali:",
+      "reserved": "{title} – mezitím ji rezervoval někdo jiný.",
+      "sold": "{title} – mezitím byla prodána.",
+      "gone": "Kniha, která už není v nabídce.",
+      "dismiss": "Rozumím"
     }
   },
   "NotFound": {

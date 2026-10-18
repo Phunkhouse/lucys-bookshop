@@ -61,7 +61,7 @@ test.describe('book detail', () => {
     ).toBeVisible()
     await expect(
       page.getByRole('button', { name: 'Přidat do košíku' }),
-    ).toBeDisabled()
+    ).toBeEnabled()
 
     await page.getByRole('link', { name: 'Zpět na knihy' }).click()
     await expect(page).toHaveURL('/')

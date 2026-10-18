@@ -1,10 +1,6 @@
 import { inArray } from 'drizzle-orm'
-import {
-  classifyCartLine,
-  subtotalMinor,
-  type CartInput,
-  type CartLine,
-} from './cart-rules'
+import { classifyCartLine, subtotalMinor, type CartLine } from './cart-rules'
+import type { CartInput } from '@/lib/cart-schema'
 import { imagesByBook } from './catalog'
 import { db } from './db/client'
 import { books } from './db/schema'

@@ -74,11 +74,10 @@ describe('BookDetailView', () => {
     expect(link.getAttribute('href')).toBe('/')
   })
 
-  it('shows a disabled add-to-cart button with a message for an available book', () => {
+  it('offers an enabled add-to-cart button for an available book, without a badge', () => {
     renderWithIntl(<BookDetailView book={book} imageBaseUrl={BASE} />)
     const button = screen.getByRole('button', { name: 'Přidat do košíku' })
-    expect(button).toHaveProperty('disabled', true)
-    expect(screen.getByText('Košík bude brzy k dispozici.')).toBeDefined()
+    expect(button).toHaveProperty('disabled', false)
     expect(screen.queryByText('Rezervováno')).toBeNull()
   })
 
