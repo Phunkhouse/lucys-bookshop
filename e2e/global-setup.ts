@@ -6,6 +6,9 @@ import { E2E_ADMIN_PASSWORD_ENV } from './admin-account'
 // 14 days). Re-seeding before every run keeps the expected pages true, however
 // old the local database is. The seed refuses non-local databases.
 export default function globalSetup() {
+  // Before the seed: it clears the e2e buyer's orders, and the seed then makes
+  // their books available again.
+  execSync('pnpm exec tsx scripts/reset-e2e-checkout.ts', { stdio: 'inherit' })
   execSync('pnpm db:seed', { stdio: 'inherit' })
 
   // A throwaway admin for the admin flows. The password is made fresh for every
