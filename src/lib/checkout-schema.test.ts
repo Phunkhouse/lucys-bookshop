@@ -43,6 +43,27 @@ describe('checkoutInputSchema', () => {
     },
   )
 
+  it('limits the length of every free-text field', () => {
+    const spaces = ' '.repeat(10_000)
+    expect(
+      issuePaths({ ...valid, phone: `+420601234567${spaces}1` }),
+    ).toContain('phone')
+    expect(
+      issuePaths({ ...valid, phone: `+420 601 ${'1 '.repeat(20)}` }),
+    ).toContain('phone')
+    expect(issuePaths({ ...valid, name: 'x'.repeat(101) })).toContain('name')
+    expect(
+      issuePaths({ ...valid, email: `${'a'.repeat(200)}@example.com` }),
+    ).toContain('email')
+    expect(
+      issuePaths({
+        ...valid,
+        shippingMethod: 'zasilkovna',
+        shippingDetails: 'x'.repeat(201),
+      }),
+    ).toContain('shippingDetails')
+  })
+
   it('requires both consent boxes to be ticked', () => {
     expect(issuePaths({ ...valid, acceptTerms: false })).toContain(
       'acceptTerms',

@@ -20,6 +20,7 @@ export const checkoutInputSchema = z
     phone: z
       .string()
       .trim()
+      .max(30)
       .regex(PHONE_CHARS)
       .refine((value) => {
         const digits = value.replace(/\D/g, '').length
