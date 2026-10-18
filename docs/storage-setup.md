@@ -30,7 +30,7 @@ Where book photos are kept and how to set it up. Everything here uses invented e
 ## Cloudflare R2 (production)
 
 1. **Bucket.** In the Cloudflare dashboard, **Storage & databases → R2 → Overview → Create bucket**. Pick a location hint in Europe, not a jurisdiction (a jurisdiction changes the S3 address), and keep **Standard** storage.
-2. **Public reads.** In the bucket's **Settings**, under **Public Development URL**, enable it (type `allow`). The address `https://pub-<random>.r2.dev` is `IMAGE_BASE_URL`. Cloudflare says it is rate-limited and meant for development, so before launch move to a custom domain or let the app serve the images (a path in `IMAGE_BASE_URL`); only that variable changes.
+2. **Public reads.** In the bucket's **Settings**, under **Public Development URL**, enable it (type `allow`). The address `https://pub-<random>.r2.dev` is `IMAGE_BASE_URL`. Cloudflare says it is rate-limited and meant for development, so before launch move to a subdomain of `lucys-bookshop.cz` or let the app serve the images (a path in `IMAGE_BASE_URL`); only that variable changes.
 3. **CORS.** In **Settings → CORS Policy → Add CORS policy**, JSON tab:
 
 ```json
@@ -38,7 +38,9 @@ Where book photos are kept and how to set it up. Everything here uses invented e
   {
     "AllowedOrigins": [
       "https://lucys-bookshop.vercel.app",
-      "https://lucys-bookshop-*.vercel.app"
+      "https://lucys-bookshop-*.vercel.app",
+      "https://lucys-bookshop.cz",
+      "https://www.lucys-bookshop.cz"
     ],
     "AllowedMethods": ["PUT"],
     "AllowedHeaders": ["Content-Type"],
