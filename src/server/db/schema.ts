@@ -173,6 +173,9 @@ export const orders = pgTable(
     locale: text('locale').notNull().default('cs'),
     // End of the 48 h reservation (extended by the seller for cash on pickup).
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    // When the seller was told about this new order (spec 6.8). Null until the
+    // notification went out, so a failed send is found and retried.
+    sellerNotifiedAt: timestamp('seller_notified_at', { withTimezone: true }),
     sellerRemindedAt: timestamp('seller_reminded_at', { withTimezone: true }),
     trackingNumber: text('tracking_number'),
     note: text('note'),

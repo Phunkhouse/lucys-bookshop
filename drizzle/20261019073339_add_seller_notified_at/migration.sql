@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "seller_notified_at" timestamp with time zone;

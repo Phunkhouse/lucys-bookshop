@@ -500,5 +500,12 @@
       "total": "Celkem",
       "pickupPoint": "Výdejní místo: {point}"
     }
+  },
+  "Notifications": {
+    "newOrder": {
+      "subject": "Nová objednávka č. {number} ({total})",
+      "body": "Nová objednávka č. {number}\n\nKupující: {name}\n\nKnihy:\n{items}\n\nCelkem: {total}\nPlatba: {payment}\nDoručení: {shipping}\nRezervace platí do {deadline}.\n\nDetail objednávky a kontakt na kupujícího najdete v administraci:\n{link}",
+      "item": "- {title} ({price})"
+    }
   }
 }
