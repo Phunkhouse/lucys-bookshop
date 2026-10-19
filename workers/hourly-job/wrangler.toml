@@ -1,0 +1,14 @@
+# The Cloudflare Worker that calls the shop's hourly job (see docs/hourly-job.md).
+# Only for deploying with wrangler; pasting index.js into the dashboard needs
+# none of this. Nothing about the shop belongs here: SHOP_URL and JOBS_SECRET are
+# set on the Worker itself, as secrets (`wrangler secret put`).
+name = "lucys-bookshop-hourly-job"
+main = "index.js"
+compatibility_date = "2026-10-01"
+# No public workers.dev address: the Worker has nothing to show a visitor.
+workers_dev = false
+
+[triggers]
+# Every hour at minute 17, UTC. Not on the hour: scheduled runs are most often
+# delayed at the start of an hour.
+crons = ["17 * * * *"]
