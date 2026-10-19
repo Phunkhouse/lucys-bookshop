@@ -73,17 +73,29 @@ Cloudflare has been changing its dashboard. Creating the Worker there is possibl
 
 ```bash
 read -s JOBS_SECRET
-curl -i -X POST -H "Authorization: Bearer $JOBS_SECRET" https://YOUR-SHOP-ADDRESS/api/jobs/hourly; unset JOBS_SECRET
 ```
 
-It answers 200 with counts if the shop side is right (this runs the real job, so a due reminder is really sent). The table below says what other statuses mean.
+Paste the secret and press Enter (nothing is shown). Then, as the next command, with nothing after the address:
 
-After the next `:17`:
+```bash
+curl -i -X POST -H "Authorization: Bearer $JOBS_SECRET" https://YOUR-SHOP-ADDRESS/api/jobs/hourly
+```
 
-- **Vercel, Logs:** a `POST /api/jobs/hourly` with status 200.
-- **Cloudflare, the Worker's logs:** a line `hourly job: {...}` with the counts. A failed run shows as an error.
+It answers 200 with counts if the shop side is right (this runs the real job, so a due reminder is really sent, and the run is recorded). The table below says what other statuses mean. Then clear the secret, as a command of its own:
 
-If you want to be sure straight away, the Worker's editor in the dashboard can fire the scheduled event by hand.
+```bash
+unset JOBS_SECRET
+```
+
+Keep each of these on its own line. Putting `; unset JOBS_SECRET` after the address looks harmless, but when it is copied with a backslash in front of the `;` it becomes part of the address and the call answers 404.
+
+After the next `:17` (UTC), two ways to see that the Worker itself got through, apart from your own call:
+
+- **Vercel, Logs**, searching for `jobs/hourly`: a second `POST /api/jobs/hourly` with status 200 at about minute 17. Vercel Hobby keeps runtime logs only for about an hour, so look soon.
+- **Cloudflare, the Worker, Observability** (switched on in `wrangler.toml`, kept for 3 days on the free plan; run `pnpm dlx wrangler deploy` once after pulling the change that enabled it): a cron invocation at `:17` with the line `hourly job: {...}`. A failed run shows `Hourly job call failed: ...`.
+- **Live, without any setup:** run `pnpm dlx wrangler tail lucys-bookshop-hourly-job` from `workers/hourly-job/` a few minutes before `:17`, and watch the run arrive. Stop it with `Ctrl+C`.
+
+If the admin shows the "Hodinová kontrola nefunguje" box, no run has been recorded for over 3 hours (or ever). Your own call, if it answers 200, clears it, but only the Vercel and Cloudflare views above show whether the Worker ran.
 
 ## When a run fails
 

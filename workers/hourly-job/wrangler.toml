@@ -10,6 +10,12 @@ compatibility_date = "2026-10-01"
 # cron trigger: see docs/hourly-job.md.)
 workers_dev = false
 
+# Keep the Worker's log lines (including each cron run and "hourly job: {...}")
+# in the dashboard, under the Worker's Observability tab. The free plan allows
+# 200,000 events a day and keeps them for 3 days; this Worker writes a few a day.
+[observability]
+enabled = true
+
 [triggers]
 # Every hour at minute 17, UTC. Not on the hour: scheduled runs are most often
 # delayed at the start of an hour.
