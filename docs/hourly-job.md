@@ -1,5 +1,7 @@
 # The hourly job
 
+> The same Worker also starts the daily backup: see `docs/backup.md`.
+
 What calls the shop once an hour, and how to set it up. Everything here uses invented example values. Never put a real secret in the repo, in an issue, in a PR or in a chat.
 
 ## What it does
