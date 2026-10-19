@@ -310,7 +310,6 @@
         "shippingCost": "Doprava",
         "free": "Zdarma",
         "total": "Celkem",
-        "note": "Poznámka",
         "writeToBuyer": "Napsat kupujícímu",
         "conflict": {
           "title": "Některé knihy už nejsou volné",
@@ -337,6 +336,56 @@
         "name": "Jméno",
         "method": "Způsob",
         "notGiven": "Neuvedeno"
+      },
+      "actions": {
+        "heading": "Co s objednávkou",
+        "back": "Zpět",
+        "pending": "Ukládám…",
+        "markPaid": {
+          "button": "Označit jako zaplacené",
+          "title": "Označit jako zaplacené?",
+          "text": "Knihy se označí jako prodané. Vrátit to jde jen zápisem vrácených peněz.",
+          "confirm": "Ano, zaplaceno"
+        },
+        "cancel": {
+          "button": "Zrušit objednávku",
+          "title": "Zrušit objednávku?",
+          "text": "Knihy se uvolní a půjdou znovu koupit.",
+          "confirm": "Ano, zrušit"
+        },
+        "refund": {
+          "button": "Vrátit peníze",
+          "title": "Vrátit peníze?",
+          "text": "Objednávka se zapíše jako vrácená a knihy se vrátí do prodeje. Peníze vracíte sami z banky.",
+          "confirm": "Ano, vráceno"
+        },
+        "extend": "Prodloužit rezervaci o 48 h",
+        "complete": "Označit jako vyřízené",
+        "ship": "Označit jako odeslané",
+        "tracking": {
+          "label": "Číslo zásilky",
+          "save": "Uložit číslo zásilky",
+          "saved": "Uloženo"
+        },
+        "note": {
+          "label": "Poznámka",
+          "save": "Uložit poznámku",
+          "saved": "Uloženo"
+        },
+        "conflict": "Platbu nejde zapsat, protože tyto knihy má mezitím někdo jiný:",
+        "errors": {
+          "notPayable": "Objednávka je už zrušená nebo vrácená, zaplatit ji nejde.",
+          "notCancellable": "Tuto objednávku už zrušit nejde.",
+          "notRefundable": "U této objednávky nejde vrátit peníze.",
+          "notExtendable": "Tuto rezervaci prodloužit nejde.",
+          "notShippable": "Tuto objednávku teď odeslat nejde.",
+          "notCompletable": "Tuto objednávku teď vyřídit nejde.",
+          "notShipped": "Číslo zásilky jde měnit jen u odeslané Zásilkovny.",
+          "invalidTracking": "Zadejte číslo zásilky (nejvýš 100 znaků, bez zalomení řádků).",
+          "invalidNote": "Poznámka je příliš dlouhá (nejvýš 2000 znaků).",
+          "notFound": "Tuto objednávku se nepodařilo najít.",
+          "failed": "Akce se nepodařila. Zkuste to prosím znovu."
+        }
       }
     }
   },

@@ -1,0 +1,82 @@
+@use 'utilities' as *;
+
+.open,
+.cancel,
+.confirm {
+  min-height: rem(48);
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.7;
+  }
+}
+
+.open,
+.cancel {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+// The choice that changes things is filled, so it cannot be mistaken for the safe one.
+.confirm {
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: 700;
+}
+
+.dialog {
+  width: calc(100% - 2 * var(--space-4));
+  max-width: rem(480);
+  padding: 0;
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+
+  &::backdrop {
+    background: rgb(0 0 0 / 60%);
+  }
+
+  // On a phone it is a sheet at the bottom, within thumb reach. The inner
+  // padding keeps clear of the home indicator.
+  @media (max-width: 40rem) {
+    width: 100%;
+    max-width: none;
+    margin: auto 0 0;
+    border-inline: 0;
+    border-bottom: 0;
+  }
+}
+
+// The dialog element has no padding, so a tap on the dimmed area is a tap on
+// the dialog itself, and a tap inside lands on this box.
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4)
+    calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+
+.heading {
+  font-size: var(--font-size-lg);
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-3);
+
+  @media (min-width: 40rem) {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
