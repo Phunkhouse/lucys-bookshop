@@ -5,7 +5,9 @@
 name = "lucys-bookshop-hourly-job"
 main = "index.js"
 compatibility_date = "2026-10-01"
-# No public workers.dev address: the Worker has nothing to show a visitor.
+# No public workers.dev address for this Worker: it has nothing to show a visitor.
+# (The account still needs a workers.dev subdomain once, or Cloudflare refuses the
+# cron trigger: see docs/hourly-job.md.)
 workers_dev = false
 
 [triggers]

@@ -34,7 +34,8 @@ A `JOBS_SECRET` shorter than 32 characters stops the shop from starting, like `B
    ```
 
 2. **Vercel:** Project, Settings, Environment Variables. Add `JOBS_SECRET` for **Production** only. Redeploy, because a setting is read at deploy time.
-3. **Cloudflare, with the command line** (recommended). From the project folder:
+3. **Cloudflare, once per account:** open the dashboard, **Workers & Pages**, and let the page load. That creates the account's `workers.dev` subdomain (you may be asked to pick a neutral name). Without it, the deploy below uploads the Worker but fails on the cron trigger with `You need a workers.dev subdomain` (error 10063). This Worker is not served on that subdomain.
+4. **Cloudflare, with the command line** (recommended). From the project folder:
 
    ```bash
    cd workers/hourly-job
@@ -43,13 +44,15 @@ A `JOBS_SECRET` shorter than 32 characters stops the shop from starting, like `B
 
    `wrangler login` opens your browser: sign in to Cloudflare and choose **Allow**. Nothing is installed in the project.
 
-4. **Deploy.** This creates the Worker and its cron trigger (`17 * * * *`, from `wrangler.toml`):
+   `pnpm dlx` may ask which packages may run install scripts (`esbuild`, `workerd`). Select neither and press Enter: login, deploy and secrets do not need them. If a later step complains about `esbuild`, run it again and allow `esbuild` only.
+
+5. **Deploy.** This creates the Worker and its cron trigger (`17 * * * *`, from `wrangler.toml`):
 
    ```bash
    pnpm dlx wrangler deploy
    ```
 
-5. **Set the two settings.** Wrangler asks for each value and hides what you type. First the shop's public address, then the secret, the same value as in Vercel:
+6. **Set the two settings.** Wrangler asks for each value and hides what you type. First the shop's public address, then the secret, the same value as in Vercel:
 
    ```bash
    pnpm dlx wrangler secret put SHOP_URL
@@ -58,13 +61,22 @@ A `JOBS_SECRET` shorter than 32 characters stops the shop from starting, like `B
 
    The address is not really a secret, but a secret is kept across deploys and nothing in the project has to be edited, so it is the simplest way. Until both are set, a run fails with a message naming the missing one. That is expected for the first minutes.
 
-6. **Check the cron trigger** in the dashboard: Workers & Pages, the Worker `lucys-bookshop-hourly-job`, Settings, Triggers, Cron Triggers. `17 * * * *` should be listed. A change to a trigger can take up to 15 minutes to take effect.
+7. **Check the cron trigger** in the dashboard: Workers & Pages, the Worker `lucys-bookshop-hourly-job`, Settings, Triggers, Cron Triggers. `17 * * * *` should be listed. A change to a trigger can take up to 15 minutes to take effect.
 
 To change the address or the secret later, run the matching `secret put` command again. Do not mix this with settings made by hand in the dashboard.
 
 Cloudflare has been changing its dashboard. Creating the Worker there is possible too (Workers & Pages, Create, start from a template, replace its code with [`workers/hourly-job/index.js`](../workers/hourly-job/index.js), add the two settings under Settings, Variables and Secrets, and the cron trigger under Settings, Triggers), but the menu names move, so the command line is the reliable way.
 
 ## Checking that it works
+
+**Right away, without waiting for the next `:17`:** make sure the production site was redeployed after `JOBS_SECRET` was added, then call the endpoint yourself. `read -s` keeps the secret out of your shell history:
+
+```bash
+read -s JOBS_SECRET
+curl -i -X POST -H "Authorization: Bearer $JOBS_SECRET" https://YOUR-SHOP-ADDRESS/api/jobs/hourly; unset JOBS_SECRET
+```
+
+It answers 200 with counts if the shop side is right (this runs the real job, so a due reminder is really sent). The table below says what other statuses mean.
 
 After the next `:17`:
 
