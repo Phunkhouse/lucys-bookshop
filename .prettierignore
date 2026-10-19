@@ -3,6 +3,9 @@ node_modules
 pnpm-lock.yaml
 drizzle/
 
+# Other checkouts of this repository that tools make; not part of this one
+.claude/worktrees/
+
 # Playwright
 node_modules/
 /test-results/
