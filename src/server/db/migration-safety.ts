@@ -22,14 +22,23 @@ const RISKY: RegExp[] = [
   /^DELETE FROM\b/i,
 ]
 
+// Strings and comments are data, not statements: a ";" or "--" inside a string
+// must not cut a statement short or swallow the rest of its line, and a risky
+// word inside either is not a statement. One pass, left to right, so whichever
+// starts first wins: a quote inside a comment, or dashes inside a string, are
+// not mistaken for the other. A string becomes an empty one.
+function withoutStringsAndComments(sql: string): string {
+  return sql.replace(/'(?:[^']|'')*'|--[^\n]*/g, (match) =>
+    match.startsWith("'") ? "''" : '',
+  )
+}
+
 // The statements of a migration that are risky, as one line each. Empty when the
-// migration is safe, or says why it is not (the marker). Comments are not read:
-// a word in a comment is not a statement.
+// migration is safe, or says why it is not (the marker).
 export function findRiskyStatements(sql: string): string[] {
   if (ALLOW_MARKER.test(sql)) return []
 
-  return sql
-    .replace(/--[^\n]*/g, '')
+  return withoutStringsAndComments(sql)
     .split(';')
     .map((statement) => statement.replace(/\s+/g, ' ').trim())
     .filter((statement) => statement !== '')

@@ -20,6 +20,21 @@ To remove something, do it in two PRs: first stop using it in the code and let t
 -- allow-destructive: nothing has read this column since PR 123
 ```
 
+## What the safety test does not catch
+
+It reads the SQL, so it cannot know how the old code behaves. Review these by hand:
+
+- **A new constraint** (`ADD CONSTRAINT` unique, check or foreign key, or `CREATE UNIQUE INDEX`) on a table the old code still writes to: its inserts can start failing. On a new table it is fine.
+- **A bare `UPDATE`** is not flagged, because backfills are normal. Make sure it cannot lock a big table for long.
+- **The word `rename`** as a column or value name is a false positive. Use the `-- allow-destructive: <reason>` comment.
+
+## Things to know about how migrations run
+
+- **One transaction for everything pending.** So `CREATE INDEX CONCURRENTLY` cannot be used, and a value added with `ALTER TYPE ... ADD VALUE` cannot be used in the same run (put its use in a later migration).
+- **The name decides, not the date.** A migration whose timestamp is older than ones already applied (its PR merged later) is still applied, and a test pins this. If two open PRs each add a migration, the second to merge should regenerate it on top of the first, so they do not depend on a schema state the other changed.
+- **Nothing waits forever.** The build gives up after 30 s without a connection (a Neon compute that is not awake), 2 minutes waiting for a lock, or 10 minutes on one statement. The old deployment stays live and the log says which one it was.
+- **After the run, every migration of the build is checked to be recorded as applied.** The database may know more than the build (an older commit rebuilt, a rollback redeployed): that is fine.
+
 ## Setup in Vercel (once)
 
 Add `MIGRATION_DATABASE_URL` to **Production** only, marked Sensitive: the Neon **direct** (non-pooler) address, with `?sslmode=verify-full` (ADR 0009). Do it before merging the PR that introduced this, because a production build without it fails on purpose. Your normal `DATABASE_URL` stays as it is.

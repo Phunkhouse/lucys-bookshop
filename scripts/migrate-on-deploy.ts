@@ -15,7 +15,12 @@ async function main() {
         'migrate-on-deploy: SKIPPED by SKIP_DEPLOY_MIGRATIONS=1. The database was NOT migrated. Remove the switch and redeploy as soon as the database is reachable.',
       )
     } else {
-      console.log('migrate-on-deploy: skipped (not a production build)')
+      // VERCEL_ENV is not a secret, and saying it explains a surprising skip.
+      console.log(
+        `migrate-on-deploy: skipped (not a production build: VERCEL_ENV is ${
+          process.env.VERCEL_ENV ? `"${process.env.VERCEL_ENV}"` : 'not set'
+        })`,
+      )
     }
     return
   }

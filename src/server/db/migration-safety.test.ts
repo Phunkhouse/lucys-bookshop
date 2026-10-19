@@ -96,6 +96,44 @@ describe('findRiskyStatements: what is not', () => {
   })
 })
 
+// A semicolon or two dashes inside a string are data, not syntax. Treating them as
+// syntax could hide a risky statement behind them.
+describe('findRiskyStatements: string literals', () => {
+  it('finds a risky statement after a string that contains a semicolon', () => {
+    const sql = `INSERT INTO "t" ("a") VALUES ('x;y');\nALTER TABLE "t" DROP COLUMN "b";`
+
+    expect(findRiskyStatements(sql)).toHaveLength(1)
+  })
+
+  it('finds a risky statement after a string that contains two dashes', () => {
+    // On one line: stripping "comments" first would swallow the rest of it.
+    const sql = `UPDATE "t" SET "a" = 'x -- y'; DROP TABLE "z";`
+
+    expect(findRiskyStatements(sql)).toHaveLength(1)
+  })
+
+  it('handles an escaped quote inside a string', () => {
+    const sql = `UPDATE "t" SET "a" = 'it''s; fine';\nDROP TABLE "z";`
+
+    expect(findRiskyStatements(sql)).toHaveLength(1)
+  })
+
+  it('does not take a risky word inside a string for a statement', () => {
+    expect(
+      findRiskyStatements(`UPDATE "t" SET "a" = 'please DROP COLUMN later';`),
+    ).toEqual([])
+    expect(
+      findRiskyStatements(`INSERT INTO "t" ("a") VALUES ('rename; truncate');`),
+    ).toEqual([])
+  })
+
+  it('does not take an apostrophe inside a comment for a string', () => {
+    const sql = `-- it's a comment with an apostrophe\nALTER TABLE "t" DROP COLUMN "b";`
+
+    expect(findRiskyStatements(sql)).toHaveLength(1)
+  })
+})
+
 describe('findRiskyStatements: the explicit marker', () => {
   const risky = 'ALTER TABLE "orders" DROP COLUMN "note";'
 
