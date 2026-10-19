@@ -14,6 +14,8 @@ type AdminOrderDetailProps = {
   // The buyer's own page for this order, where the payment details are.
   buyerOrderUrl: string
   shopName: string
+  // The seller's buttons, shown right under the status so they are in reach.
+  children?: React.ReactNode
 }
 
 const tone = {
@@ -41,6 +43,7 @@ export function AdminOrderDetail({
   now,
   buyerOrderUrl,
   shopName,
+  children,
 }: AdminOrderDetailProps) {
   const t = useTranslations('Admin.orders')
   const td = useTranslations('Admin.orders.detail')
@@ -140,6 +143,8 @@ export function AdminOrderDetail({
         </div>
       )}
 
+      {children}
+
       <section className={css.section} aria-labelledby="order-buyer">
         <h2 id="order-buyer">{td('buyer')}</h2>
         <dl className={css.facts}>
@@ -213,13 +218,6 @@ export function AdminOrderDetail({
           <span>{money(order.totalMinor, order.currency)}</span>
         </p>
       </section>
-
-      {order.note && (
-        <section className={css.section} aria-labelledby="order-note">
-          <h2 id="order-note">{td('note')}</h2>
-          <p className={css.noteText}>{order.note}</p>
-        </section>
-      )}
     </>
   )
 }

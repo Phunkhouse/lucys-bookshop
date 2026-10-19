@@ -11,6 +11,7 @@ import {
   normalizeNote,
   normalizeTrackingNumber,
 } from '@/server/order-transitions'
+import { manualPaymentConfirmer } from '@/server/payments'
 import type { DbTransaction } from '@/server/reservations'
 
 // The admin's order actions (spec 6.4, 6.7, 6.9). Every one follows the same
@@ -55,6 +56,18 @@ export type CompleteResult =
   | { outcome: 'completed' }
   | { outcome: 'unchanged' }
   | Refused<'not_completable' | 'not_found'>
+
+export type MarkPaidResult =
+  | { outcome: 'paid' }
+  | { outcome: 'unchanged' }
+  // A book went to someone else meanwhile. Nothing was changed.
+  | { outcome: 'conflict'; books: ConflictBook[] }
+  | Refused<'not_payable' | 'not_found'>
+
+export type TrackingResult =
+  | { outcome: 'saved' }
+  | { outcome: 'unchanged' }
+  | Refused<'not_shipped' | 'invalid_tracking' | 'not_found'>
 
 export type NoteResult =
   { outcome: 'saved' } | Refused<'invalid_note' | 'not_found'>
@@ -282,4 +295,58 @@ export async function setOrderNote(
     .returning({ id: orders.id })
   if (updated.length === 0) return { outcome: 'refused', reason: 'not_found' }
   return { outcome: 'saved' }
+}
+
+// The seller saw the money (spec 6.6): marks the order paid and its books sold.
+// All the work and the locking are in the payment confirmer; this only gives
+// its answer the same shape as the other order actions.
+export async function markPaid(
+  _actor: AdminActor,
+  id: string,
+  now: Date,
+): Promise<MarkPaidResult> {
+  const result = await manualPaymentConfirmer.confirm(id, now)
+  switch (result.status) {
+    case 'paid':
+      return { outcome: 'paid' }
+    case 'already_paid':
+      return { outcome: 'unchanged' }
+    case 'not_payable':
+      return { outcome: 'refused', reason: 'not_payable' }
+    case 'conflict':
+      return { outcome: 'conflict', books: result.books }
+    case 'not_found':
+      return { outcome: 'refused', reason: 'not_found' }
+  }
+}
+
+// Corrects the tracking number of a Zásilkovna order that has gone out. The
+// status does not change, and the seller may fix a typo after delivery too.
+export async function setTrackingNumber(
+  _actor: AdminActor,
+  id: string,
+  trackingNumber: string,
+): Promise<TrackingResult> {
+  if (!orderId.safeParse(id).success) {
+    return { outcome: 'refused', reason: 'not_found' }
+  }
+  return db.transaction(async (tx) => {
+    const order = await lockOrder(tx, id)
+    if (!order) return { outcome: 'refused', reason: 'not_found' }
+    const shippedOut =
+      order.status === 'shipped' || order.status === 'completed'
+    if (order.shippingMethod !== 'zasilkovna' || !shippedOut) {
+      return { outcome: 'refused', reason: 'not_shipped' }
+    }
+    const tracking = normalizeTrackingNumber(trackingNumber)
+    if (tracking === null) {
+      return { outcome: 'refused', reason: 'invalid_tracking' }
+    }
+    if (tracking === order.trackingNumber) return { outcome: 'unchanged' }
+    await tx
+      .update(orders)
+      .set({ trackingNumber: tracking })
+      .where(eq(orders.id, order.id))
+    return { outcome: 'saved' }
+  })
 }

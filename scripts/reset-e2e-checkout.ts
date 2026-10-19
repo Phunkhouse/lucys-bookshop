@@ -7,6 +7,7 @@ import {
 } from '../e2e/checkout-fixtures'
 import { env } from '../src/config/env'
 import { db, pool } from '../src/server/db/client'
+import { rateLimit } from '../src/server/db/auth-schema'
 import {
   books,
   orderItems,
@@ -18,7 +19,7 @@ import {
 // Used by the e2e global setup only, before the seed. Puts the checkout back in
 // the state the tests expect: the e2e buyer's orders from earlier runs are gone
 // (the seed then makes their books available again), the rate limit is empty so
-// repeated runs do not lock each other out, and the shop settings are known.
+// repeated runs do not lock each other out (checkout and login), and the shop settings are known.
 // Refuses anything but a local database.
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 
@@ -46,6 +47,9 @@ async function main() {
     }
 
     await tx.delete(requestLimits)
+    // The login limit (5 per 15 minutes) would lock the admin flows out when
+    // the suite is run again within a quarter of an hour.
+    await tx.delete(rateLimit)
     await tx
       .insert(settings)
       .values({

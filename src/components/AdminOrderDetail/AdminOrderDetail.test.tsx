@@ -125,15 +125,6 @@ describe('AdminOrderDetail', () => {
     expect(screen.getByText('Osobní odběr')).toBeTruthy()
   })
 
-  it('shows the note only when there is one', () => {
-    const { unmount } = render({ note: 'zaplatila o 50 Kč méně' })
-    expect(screen.getByText('zaplatila o 50 Kč méně')).toBeTruthy()
-    unmount()
-
-    render({ note: null })
-    expect(screen.queryByText('Poznámka')).toBeNull()
-  })
-
   it('shows the deadline on the shop clock while the order waits for payment', () => {
     // 22:30 UTC on the 18th is 0:30 on the 19th in Prague.
     render({ expiresAt: new Date('2026-10-18T22:30:00.000Z') })
