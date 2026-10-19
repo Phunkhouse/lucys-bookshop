@@ -23,6 +23,7 @@
     "db:ping": "tsx scripts/db-ping.ts",
     "db:seed": "tsx scripts/seed.ts",
     "admin:create": "tsx scripts/create-admin.ts",
+    "backup:restore": "tsx scripts/restore-backup.ts",
     "prepare": "husky"
   },
   "dependencies": {

@@ -87,6 +87,12 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # The restore drill in the database tests encrypts with `age` and runs
+      # pg_dump from the postgres:18 image, which the service above already pulled.
+      - name: Install age
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
       - run: pnpm test:db
       # No `pnpm build` here: the e2e job below builds the production app (its
       # Playwright config runs `pnpm build && pnpm start` in CI), and Vercel
