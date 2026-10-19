@@ -12,9 +12,13 @@ export type JobHealth =
 
 // At exactly the limit it is still fine. A run that seems to lie in the future
 // (a clock a little ahead) is fine too.
-export function jobHealth(lastRunAt: Date | null, now: Date): JobHealth {
+export function jobHealth(
+  lastRunAt: Date | null,
+  now: Date,
+  staleAfterMs: number = JOB_STALE_AFTER_MS,
+): JobHealth {
   if (lastRunAt === null) return { status: 'never' }
-  if (now.getTime() - lastRunAt.getTime() > JOB_STALE_AFTER_MS) {
+  if (now.getTime() - lastRunAt.getTime() > staleAfterMs) {
     return { status: 'stale', lastRunAt }
   }
   return { status: 'ok' }

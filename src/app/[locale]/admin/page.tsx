@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { AdminBookRow } from '@/components/AdminBookRow'
+import { BackupHealthNotice } from '@/components/BackupHealthNotice'
 import { JobHealthNotice } from '@/components/JobHealthNotice'
 import { SignOutButton } from '@/components/SignOutButton'
 import { env } from '@/config/env'
@@ -7,6 +8,7 @@ import { Link } from '@/i18n/navigation'
 import { requireAdmin } from '@/lib/auth'
 import { listAdminBooks } from '@/server/admin/book-list'
 import { parseStatusFilter, STATUS_FILTERS } from '@/server/admin/status-filter'
+import { getBackupHealth } from '@/server/backup-heartbeat'
 import { getJobHealth } from '@/server/job-heartbeat'
 import { deleteBookAction, setBookHiddenAction } from './actions'
 import css from './page.module.scss'
@@ -23,6 +25,9 @@ export default async function AdminHome({
   const t = await getTranslations('Admin')
   const jobHealth = await getJobHealth(actor, now, {
     enabled: Boolean(env.JOBS_SECRET),
+  })
+  const backupHealth = await getBackupHealth(actor, now, {
+    enabled: Boolean(env.BACKUP_REPORT_SECRET),
   })
 
   return (
@@ -43,6 +48,7 @@ export default async function AdminHome({
         </div>
       </header>
       <JobHealthNotice health={jobHealth} />
+      <BackupHealthNotice health={backupHealth} />
       <p>{t('signedInAs', { email: actor.email })}</p>
 
       <nav aria-label={t('books.filterLabel')}>

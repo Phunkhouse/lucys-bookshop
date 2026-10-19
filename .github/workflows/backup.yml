@@ -81,3 +81,22 @@ jobs:
           stored=$(aws s3api head-object --bucket "$R2_BUCKET" --key "$key" --endpoint-url "$endpoint" --query ContentLength --output text)
           test "$sent" = "$stored" || { echo "Uploaded $stored bytes, expected $sent"; exit 1; }
           echo "Backup stored: ${key} (${sent} bytes)"
+
+      # Tells the shop, so the admin warns when backups stop. It runs only after
+      # the backup is stored and checked. If this call fails the run goes red, so
+      # the failure is noticed, although the backup itself is safe in the bucket.
+      # The address must be https: the secret travels with the call.
+      - name: Report to the shop
+        env:
+          BACKUP_REPORT_SECRET: ${{ secrets.BACKUP_REPORT_SECRET }}
+          SHOP_URL: ${{ vars.SHOP_URL }}
+        run: |
+          set -euo pipefail
+          shop="${SHOP_URL%/}"
+          case "$shop" in https://*) ;; *) echo "SHOP_URL must start with https://"; exit 1 ;; esac
+          test -n "$BACKUP_REPORT_SECRET" || { echo "BACKUP_REPORT_SECRET is not set"; exit 1; }
+          curl --fail --silent --show-error --max-time 30 --retry 3 --retry-all-errors \
+            --request POST --header "Authorization: Bearer $BACKUP_REPORT_SECRET" \
+            "${shop}/api/jobs/backup-report" > /dev/null \
+            || { echo "The backup is stored, but reporting it to the shop failed"; exit 1; }
+          echo "Reported to the shop"

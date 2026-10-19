@@ -75,12 +75,27 @@ const envSchema = databaseEnvSchema
     // Without it the endpoint is switched off. At least 32 characters; never
     // committed: set per environment and in the scheduler.
     JOBS_SECRET: optionalText,
+    // The bearer token the backup workflow reports a finished backup with (ADR
+    // 0021). A separate secret from JOBS_SECRET: GitHub holds this one, and it can
+    // only record "a backup happened", never run the hourly job. Without it the
+    // endpoint and the admin warning are off. At least 32 characters.
+    BACKUP_REPORT_SECRET: optionalText,
   })
   .superRefine((env, ctx) => {
     if (env.JOBS_SECRET !== undefined && env.JOBS_SECRET.length < 32) {
       ctx.addIssue({
         code: 'custom',
         path: ['JOBS_SECRET'],
+        message: 'Must be at least 32 characters',
+      })
+    }
+    if (
+      env.BACKUP_REPORT_SECRET !== undefined &&
+      env.BACKUP_REPORT_SECRET.length < 32
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['BACKUP_REPORT_SECRET'],
         message: 'Must be at least 32 characters',
       })
     }

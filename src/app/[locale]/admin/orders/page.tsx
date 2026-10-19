@@ -1,11 +1,13 @@
 import { getTranslations } from 'next-intl/server'
 import { AdminOrderRow } from '@/components/AdminOrderRow'
+import { BackupHealthNotice } from '@/components/BackupHealthNotice'
 import { JobHealthNotice } from '@/components/JobHealthNotice'
 import { env } from '@/config/env'
 import { Link } from '@/i18n/navigation'
 import { requireAdmin } from '@/lib/auth'
 import { parseStageFilter, STAGE_FILTERS } from '@/server/admin/order-filter'
 import { listAdminOrders } from '@/server/admin/order-list'
+import { getBackupHealth } from '@/server/backup-heartbeat'
 import { getJobHealth } from '@/server/job-heartbeat'
 import css from '../page.module.scss'
 
@@ -22,6 +24,9 @@ export default async function AdminOrders({
   const jobHealth = await getJobHealth(actor, now, {
     enabled: Boolean(env.JOBS_SECRET),
   })
+  const backupHealth = await getBackupHealth(actor, now, {
+    enabled: Boolean(env.BACKUP_REPORT_SECRET),
+  })
 
   return (
     <main className={css.main}>
@@ -35,6 +40,7 @@ export default async function AdminOrders({
       </header>
 
       <JobHealthNotice health={jobHealth} />
+      <BackupHealthNotice health={backupHealth} />
 
       <nav aria-label={t('filterLabel')}>
         <ul className={css.filters}>
