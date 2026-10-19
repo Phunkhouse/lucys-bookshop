@@ -19,7 +19,7 @@ Measured from the last 40 successful runs and the last 100 runs overall:
 
 1. **CI runs on pull requests, not after the merge.** The rulesets mean code reaches `main` only after `check` and `e2e` passed on a tree that already contained `main`, so a post-merge run would repeat it. A **weekly scheduled run** (Monday) catches drift: a floating image tag such as `postgres:18`, Node 24 updates.
 2. **`concurrency`** cancels an outdated run when the same pull request is pushed again. Scheduled runs are never cancelled.
-3. **One production build per run.** `pnpm build` is removed from `check`: the e2e job already builds (`pnpm build && pnpm start` in its Playwright config), and Vercel builds every pull request too.
+3. **One production build per run.** `pnpm build` is removed from `check`: the e2e job already builds (`pnpm build && pnpm start` in its Playwright config). Vercel builds every pull request too, but its check is not required, so e2e is the enforced gate.
 4. **Postgres health check every second** (30 tries) instead of every 5 s. Measured locally on a throwaway container: healthy after 1.3 s instead of 5.2 s, about 4 s per job.
 5. **SeaweedFS ready when `/status` answers 2xx**, polled twice a second, instead of "any reply". Measured: both pass after about 3.4 s, so no time is gained; the new check is stricter (a half-started server answers with errors too), and a bucket could be created the moment it passed.
 
@@ -34,9 +34,11 @@ The job names `check` and `e2e` are unchanged, so the rulesets need no edit.
 
 ## Consequences
 
+- **Result, from this change's own pull request run:** 211 runner-seconds (`check` 118 s, `e2e` 93 s) against the 242 s median before, with no build step in `check`, and the container start down from 16 and 15 s to 9 and 10 s. The photo storage step is unchanged within noise (11 and 14 s).
 - About **45% fewer runner minutes**: a pull request run drops from 242 s to about 211 s (build 23 s, Postgres 8 s), and the post-merge runs are gone. Per 100 runs: 403 min before, about 222 min after, plus 4 min a week for the scheduled run. Coverage is unchanged and the wall-clock time of a check is the same or slightly shorter.
 - We lose a post-merge confirmation. What remains: the rulesets, Vercel's production build (with the migration step, ADR 0019) on every merge, and the weekly run.
-- If the e2e job ever becomes conditional, add the build back to `check`.
+- A build failure now shows up as a failure of `e2e`, not of `check`; keep that in mind when triaging. If the e2e job ever becomes conditional, add the build back to `check`.
+- The Postgres and SeaweedFS steps are written out in both jobs. A composite action could share them later; it is not worth it for two copies.
 - A GitHub scheduled workflow stops after 60 days without repository activity (see `docs/hourly-job.md`); the weekly run is only a drift detector, so that is acceptable.
 
 ## Reusing this in another repository

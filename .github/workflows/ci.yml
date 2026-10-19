@@ -3,7 +3,9 @@ name: CI
 # CI runs on pull requests, not again after the merge (ADR 0020). The rulesets on
 # main require `check` and `e2e`, with "branch must be up to date": what reaches
 # main has passed on a tree that already contained main, so a post-merge run
-# would repeat it. The weekly run below catches drift (an image tag, Node 24).
+# would repeat it. The weekly run below catches drift (an image tag, Node 24). It
+# is only a drift detector: GitHub stops scheduled runs after 60 days without
+# repository activity, which is acceptable here.
 on:
   pull_request:
   schedule:
