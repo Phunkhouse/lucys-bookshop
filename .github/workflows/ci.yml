@@ -1,12 +1,22 @@
 name: CI
 
+# CI runs on pull requests, not again after the merge (ADR 0020). The rulesets on
+# main require `check` and `e2e`, with "branch must be up to date": what reaches
+# main has passed on a tree that already contained main, so a post-merge run
+# would repeat it. The weekly run below catches drift (an image tag, Node 24).
 on:
   pull_request:
-  push:
-    branches: [main]
+  schedule:
+    - cron: '23 5 * * 1'
 
 permissions:
   contents: read
+
+# A newer push to the same pull request makes the older run pointless. Scheduled
+# runs are never cancelled.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
@@ -21,11 +31,13 @@ jobs:
           POSTGRES_DB: ci
         ports:
           - 5432:5432
+        # Probed every second: the job starts as soon as Postgres answers, not at
+        # the next 5 s tick. 30 tries keep the same patience on a slow runner.
         options: >-
           --health-cmd "pg_isready -U ci -d ci"
-          --health-interval 5s
+          --health-interval 1s
           --health-timeout 3s
-          --health-retries 10
+          --health-retries 30
     env:
       # Points at the Postgres service defined above. Throwaway: it exists only for this run.
       DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/ci
@@ -59,10 +71,11 @@ jobs:
             -v "$PWD/docker/storage/s3.json:/etc/seaweedfs/s3.json:ro" \
             chrislusf/seaweedfs:4.48 \
             server -s3 -s3.config=/etc/seaweedfs/s3.json -dir=/data
-          for i in $(seq 1 60); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:9000/ || true)
-            if [ "$code" != "000" ]; then exit 0; fi
-            sleep 1
+          # Ready when the S3 gateway's own /status answers 2xx. Not "any reply":
+          # a half-started server answers with errors too. Polled twice a second.
+          for _ in $(seq 1 120); do
+            if curl -fsS -o /dev/null http://127.0.0.1:9000/status; then exit 0; fi
+            sleep 0.5
           done
           docker logs storage
           exit 1
@@ -73,7 +86,10 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm test:db
-      - run: pnpm build
+      # No `pnpm build` here: the e2e job below builds the production app (its
+      # Playwright config runs `pnpm build && pnpm start` in CI), and Vercel
+      # builds it again on every pull request. If e2e ever becomes conditional,
+      # build here too.
 
   e2e:
     runs-on: ubuntu-24.04
@@ -87,11 +103,13 @@ jobs:
           POSTGRES_DB: ci
         ports:
           - 5432:5432
+        # Probed every second: the job starts as soon as Postgres answers, not at
+        # the next 5 s tick. 30 tries keep the same patience on a slow runner.
         options: >-
           --health-cmd "pg_isready -U ci -d ci"
-          --health-interval 5s
+          --health-interval 1s
           --health-timeout 3s
-          --health-retries 10
+          --health-retries 30
     env:
       # Throwaway database for this run. The home page queries it, so it gets
       # the real migrations. Playwright seeds the invented data itself (e2e/global-setup.ts).
@@ -126,10 +144,11 @@ jobs:
             -v "$PWD/docker/storage/s3.json:/etc/seaweedfs/s3.json:ro" \
             chrislusf/seaweedfs:4.48 \
             server -s3 -s3.config=/etc/seaweedfs/s3.json -dir=/data
-          for i in $(seq 1 60); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:9000/ || true)
-            if [ "$code" != "000" ]; then exit 0; fi
-            sleep 1
+          # Ready when the S3 gateway's own /status answers 2xx. Not "any reply":
+          # a half-started server answers with errors too. Polled twice a second.
+          for _ in $(seq 1 120); do
+            if curl -fsS -o /dev/null http://127.0.0.1:9000/status; then exit 0; fi
+            sleep 0.5
           done
           docker logs storage
           exit 1
