@@ -89,6 +89,7 @@ pnpm admin:create   # create an admin account (needs only DATABASE_URL; asks for
 - Ask before changing the spec's decisions. Propose the change instead.
 - PR titles use Conventional Commits (feat:, fix:, docs:, test:, ci:, build:, style:, refactor:).
 - Open PRs with gh pr create using a Conventional Commits title. Never merge. The developer merges after review.
+- CI runs on pull requests and weekly, not again after the merge (ADR 0020): `main` only gets code that passed `check` and `e2e` while up to date with it. Don't rename those two jobs without updating the rulesets.
 
 ## Never commit
 
