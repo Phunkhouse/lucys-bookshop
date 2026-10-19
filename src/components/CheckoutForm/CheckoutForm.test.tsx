@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
 import { CART_STORAGE_KEY } from '@/lib/cart-store'
 import { renderWithIntl } from '@/lib/render-with-intl'
 import type { CheckoutResult } from '@/server/checkout'
@@ -617,5 +618,85 @@ describe('CheckoutForm', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Zkusit znovu' }))
       await ready()
     })
+  })
+})
+
+// A phone on plain http (a home network, `pnpm dev`) is not a secure context, and
+// Safari before 15.4 never had crypto.randomUUID: checkout must still open and
+// send a checkout key the server accepts.
+describe('CheckoutForm without crypto.randomUUID', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  function withoutRandomUuid() {
+    const real = globalThis.crypto
+    vi.stubGlobal('crypto', {
+      getRandomValues: real.getRandomValues.bind(real),
+    })
+  }
+
+  it('opens and sends a checkout key the server accepts', async () => {
+    withoutRandomUuid()
+    store(TWO_BOOKS)
+    const submit = vi.fn().mockResolvedValue({ ok: true, publicToken: 'tok-1' })
+    renderForm({ submit })
+    await ready()
+    fillContact()
+    tickConsents()
+
+    send()
+
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1))
+    expect(
+      z.uuid().safeParse(submit.mock.calls[0][0].checkoutKey).success,
+    ).toBe(true)
+  })
+
+  // The form makes a second key after an order that already exists was shown.
+  it('makes a new valid key for the next order too', async () => {
+    withoutRandomUuid()
+    const added = { shortId: 'cccccc33', priceMinorSeen: 7000 }
+    store([...TWO_BOOKS, added])
+    const validate = vi
+      .fn()
+      .mockResolvedValue(
+        answer([
+          ok('aaaaaa11', 'První kniha', 18900),
+          ok('bbbbbb22', 'Druhá kniha', 5000),
+          ok('cccccc33', 'Třetí kniha', 7000),
+        ]),
+      )
+    const submit = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        reason: 'already_placed',
+        publicToken: 'tok-old',
+        shortIds: ['aaaaaa11', 'bbbbbb22'],
+      })
+      .mockResolvedValue({ ok: true, publicToken: 'tok-new' })
+    renderForm({ submit, validate })
+    await ready()
+    fillContact()
+    tickConsents()
+
+    send()
+    await screen.findByRole('alert')
+    await waitFor(() =>
+      expect(
+        (
+          screen.getByRole('button', {
+            name: 'Odeslat objednávku',
+          }) as HTMLButtonElement
+        ).disabled,
+      ).toBe(false),
+    )
+    send()
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(2))
+
+    const first = submit.mock.calls[0][0].checkoutKey
+    const second = submit.mock.calls[1][0].checkoutKey
+    expect(z.uuid().safeParse(first).success).toBe(true)
+    expect(z.uuid().safeParse(second).success).toBe(true)
+    expect(second).not.toBe(first)
   })
 })
