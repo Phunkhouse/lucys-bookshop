@@ -82,6 +82,16 @@ describe('backup workflow', () => {
     expect(workflow).toContain('daily/${day}/lucys-bookshop-${stamp}.dump.age')
   })
 
+  it('uses the default R2 address, the same as the restore script', () => {
+    // The bucket has a location hint, not a jurisdiction (docs/storage-setup.md).
+    // A jurisdictional address (".eu.") answers AccessDenied for such a bucket.
+    const script = readFileSync('scripts/restore-backup.ts', 'utf8')
+    for (const text of [workflow, script]) {
+      expect(text).toContain('.r2.cloudflarestorage.com')
+      expect(text).not.toContain('.eu.r2.')
+    }
+  })
+
   it('serialises runs and lets a running one finish', () => {
     expect(block('concurrency').map((line) => line.trim())).toEqual([
       'group: backup',

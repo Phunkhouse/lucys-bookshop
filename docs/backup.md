@@ -12,7 +12,7 @@ Once a day a Cloudflare Worker asks GitHub to run the workflow `.github/workflow
 
 The repository is public, so the dump is never an artifact and never leaves the runner unencrypted. Only the private key can read a backup. It is in two places owned by the developer (a password manager, and a second copy somewhere independent) and **nowhere else**: not in GitHub, not in Cloudflare, not in the repo.
 
-The bucket `lucys-bookshop-backups` (EU jurisdiction) has a lock rule that stops deleting anything under `daily/` for 30 days and a lifecycle rule that removes objects after 35 days. So about 30 daily copies exist at any time. R2's free tier (10 GB-month) is far more than a small shop's dump needs.
+The bucket `lucys-bookshop-backups` (location hint in Europe, no jurisdiction, so the default R2 address) has a lock rule that stops deleting anything under `daily/` for 30 days and a lifecycle rule that removes objects after 35 days. So about 30 daily copies exist at any time. R2's free tier (10 GB-month) is far more than a small shop's dump needs.
 
 Neon's own history on the free plan is only 6 hours. This backup is the real safety net.
 
