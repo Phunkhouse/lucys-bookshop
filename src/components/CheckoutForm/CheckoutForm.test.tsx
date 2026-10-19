@@ -700,3 +700,120 @@ describe('CheckoutForm without crypto.randomUUID', () => {
     expect(second).not.toBe(first)
   })
 })
+
+// Helping the buyer choose a Zásilkovna pickup point (spec 6.5): a link to
+// Packeta's own list and map, and a field that says what to write.
+describe('CheckoutForm: finding a Zásilkovna pickup point', () => {
+  async function chooseZasilkovna() {
+    store(TWO_BOOKS)
+    renderForm()
+    await ready()
+    fireEvent.click(screen.getByLabelText(/^Zásilkovna/))
+  }
+
+  it('links to the Zásilkovna list and map of pickup points', async () => {
+    await chooseZasilkovna()
+
+    const link = screen.getByRole('link', {
+      name: /Najít výdejní místo na mapě Zásilkovny/,
+    })
+    expect(link.getAttribute('href')).toBe('https://www.zasilkovna.cz/pobocky')
+  })
+
+  // It leaves the shop, so it opens beside the form and the buyer comes back to
+  // the form as they left it. Not handing our address over to the other site.
+  it('opens that page in a new tab, safely', async () => {
+    await chooseZasilkovna()
+
+    const link = screen.getByRole('link', {
+      name: /Najít výdejní místo na mapě Zásilkovny/,
+    })
+    expect(link.getAttribute('target')).toBe('_blank')
+    const rel = (link.getAttribute('rel') ?? '').split(/\s+/)
+    expect(rel).toContain('noopener')
+    expect(rel).toContain('noreferrer')
+  })
+
+  it('tells assistive technology that the link opens in a new window', async () => {
+    await chooseZasilkovna()
+
+    expect(
+      screen.getByRole('link', { name: /otevře se v novém okně/ }),
+    ).toBeTruthy()
+  })
+
+  it('says what to write in the field, with an example', async () => {
+    await chooseZasilkovna()
+
+    const field = screen.getByLabelText('Výdejní místo Zásilkovny')
+    const hint = document.getElementById('checkout-point-hint')
+    expect(hint?.textContent).toMatch(/název a adresu/)
+    expect(hint?.textContent).toContain('Z-BOX Praha 1, Dlouhá 5')
+    expect(field.getAttribute('aria-describedby')).toContain(
+      'checkout-point-hint',
+    )
+    expect(field.getAttribute('placeholder')).toBe('Z-BOX Praha 1, Dlouhá 5')
+  })
+
+  it('keeps the field to the length the server accepts', async () => {
+    await chooseZasilkovna()
+
+    expect(
+      screen
+        .getByLabelText('Výdejní místo Zásilkovny')
+        .getAttribute('maxlength'),
+    ).toBe('200')
+  })
+
+  it('does not suggest what the browser might autofill', async () => {
+    await chooseZasilkovna()
+
+    expect(
+      screen
+        .getByLabelText('Výdejní místo Zásilkovny')
+        .getAttribute('autocomplete'),
+    ).toBe('off')
+  })
+
+  it('shows none of this for a personal pickup', async () => {
+    store(TWO_BOOKS)
+    renderForm()
+    await ready()
+
+    expect(
+      screen.queryByRole('link', { name: /výdejní místo na mapě/i }),
+    ).toBeNull()
+    expect(screen.queryByLabelText('Výdejní místo Zásilkovny')).toBeNull()
+  })
+
+  it('does not send the form when the link is used', async () => {
+    const submit = vi.fn()
+    store(TWO_BOOKS)
+    renderForm({ submit })
+    await ready()
+    fireEvent.click(screen.getByLabelText(/^Zásilkovna/))
+
+    fireEvent.click(
+      screen.getByRole('link', { name: /Najít výdejní místo na mapě/ }),
+    )
+
+    expect(submit).not.toHaveBeenCalled()
+  })
+
+  it('still asks for the pickup point before sending', async () => {
+    const submit = vi.fn()
+    store(TWO_BOOKS)
+    renderForm({ submit })
+    await ready()
+    fillContact()
+    tickConsents()
+    fireEvent.click(screen.getByLabelText(/^Zásilkovna/))
+
+    send()
+
+    expect(
+      await screen.findByText('Napište výdejní místo Zásilkovny.'),
+    ).toBeTruthy()
+    expect(submit).not.toHaveBeenCalled()
+  })
+})

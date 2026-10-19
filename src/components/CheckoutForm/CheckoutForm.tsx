@@ -8,6 +8,7 @@ import {
   type Resolver,
 } from 'react-hook-form'
 import { useTranslations } from 'next-intl'
+import { shopConfig } from '@/config/shop'
 import { Link, useRouter } from '@/i18n/navigation'
 import type { CartInput } from '@/lib/cart-schema'
 import { checkoutInputSchema } from '@/lib/checkout-schema'
@@ -425,8 +426,24 @@ export function CheckoutForm({
               <label htmlFor="checkout-point">
                 {t('shipping.pickupPoint')}
               </label>
+              {/* Packeta's own list and map, beside the form: the buyer finds a
+                  point there and comes back to the form as they left it. */}
+              <a
+                href={shopConfig.zasilkovnaPointsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={css.findPoint}
+              >
+                {t('shipping.pickupPointFind')}{' '}
+                <span className={css.visuallyHidden}>
+                  {t('shipping.opensInNewTab')}
+                </span>
+              </a>
               <input
                 id="checkout-point"
+                placeholder={t('shipping.pickupPointExample')}
+                maxLength={200}
+                autoComplete="off"
                 aria-invalid={pointField.invalid}
                 aria-describedby={[
                   pointField.describedBy,
@@ -437,7 +454,12 @@ export function CheckoutForm({
                 {...register('shippingDetails')}
               />
               <p id="checkout-point-hint" className={css.hint}>
-                {t('shipping.pickupPointHint')}
+                {t.rich('shipping.pickupPointHint', {
+                  // Kept in one piece: a line break inside "Z-BOX" reads badly.
+                  example: (chunks) => (
+                    <span className={css.nowrap}>{chunks}</span>
+                  ),
+                })}
               </p>
               {pointField.message}
             </div>
