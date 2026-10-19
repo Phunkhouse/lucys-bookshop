@@ -18,7 +18,8 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     // The seller's account for the QR code on the order page: a made-up one,
     // built at run time. A server that was already running keeps its own.
-    env: { SELLER_IBAN: TEST_IBAN },
+    // No real mail from the tests: an empty key means "only log", whatever .env has.
+    env: { SELLER_IBAN: TEST_IBAN, RESEND_API_KEY: '' },
     timeout: 120_000,
   },
 })

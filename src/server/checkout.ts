@@ -1,5 +1,5 @@
 import { checkoutInputSchema } from '@/lib/checkout-schema'
-import { PlaceOrderError, placeOrder } from './orders'
+import { PlaceOrderError, placeOrder, type PlacedOrder } from './orders'
 import { hitRateLimit, type RateLimitRule } from './rate-limit'
 import { rateLimitKey } from './rate-limit-key'
 import { BooksUnavailableError } from './reservations'
@@ -17,6 +17,10 @@ export type CheckoutContext = {
   // The server secret the address is hashed with.
   secret: string
   now: Date
+  // Called once for a new order, after it is saved: the place to tell the
+  // seller. Not called for the same press again, nor when no order was made.
+  // Whatever it does or throws, the buyer keeps their order.
+  onPlaced?: (placed: PlacedOrder) => void
 }
 
 // What the browser is told. Reasons only, never details about other buyers.
@@ -41,7 +45,7 @@ export type CheckoutResult =
 // the form shows its generic message.
 export async function submitCheckout(
   raw: unknown,
-  { address, secret, now }: CheckoutContext,
+  { address, secret, now, onPlaced }: CheckoutContext,
 ): Promise<CheckoutResult> {
   // Counted before anything else, so invalid requests cost an attacker too.
   const limit = await hitRateLimit(
@@ -62,6 +66,16 @@ export async function submitCheckout(
 
   try {
     const placed = await placeOrder(parsed.data, now)
+    if (!placed.replayed) {
+      try {
+        onPlaced?.(placed)
+      } catch (error) {
+        console.error(
+          'Reporting the new order failed:',
+          error instanceof Error ? error.message : 'unknown error',
+        )
+      }
+    }
     return { ok: true, publicToken: placed.publicToken }
   } catch (error) {
     if (error instanceof BooksUnavailableError) {

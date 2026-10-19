@@ -6,6 +6,10 @@ import { E2E_ADMIN_PASSWORD_ENV } from './admin-account'
 // 14 days). Re-seeding before every run keeps the expected pages true, however
 // old the local database is. The seed refuses non-local databases.
 export default function globalSetup() {
+  // No real mail from the tests, whatever the developer's .env holds: an empty
+  // key means "only log". The scripts below and the server inherit it.
+  process.env.RESEND_API_KEY = ''
+
   // Before the seed: it clears the e2e buyer's orders, and the seed then makes
   // their books available again.
   execSync('pnpm exec tsx scripts/reset-e2e-checkout.ts', { stdio: 'inherit' })

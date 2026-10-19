@@ -27,6 +27,12 @@ const imageBaseUrl = z.string().transform((value, ctx) => {
   return trimmed
 })
 
+// An empty value, as .env.example leaves it, counts as not set.
+const optionalText = z
+  .string()
+  .optional()
+  .transform((value) => (value ? value : undefined))
+
 const envSchema = databaseEnvSchema
   .extend({
     // Signs session cookies. Generate with: openssl rand -base64 32
@@ -57,6 +63,32 @@ const envSchema = databaseEnvSchema
       .refine((value) => value === undefined || isValidIban(value), {
         message: 'Must be a valid Czech IBAN (CZ and 22 digits)',
       }),
+    // Email to the seller about new orders (spec 6.8, Resend). Without a key the
+    // messages are only logged. With a key, both addresses are required. The key
+    // is never committed: set per environment.
+    RESEND_API_KEY: optionalText,
+    SELLER_NOTIFY_EMAIL: optionalText,
+    NOTIFY_FROM_EMAIL: optionalText,
+  })
+  .superRefine((env, ctx) => {
+    for (const name of ['SELLER_NOTIFY_EMAIL', 'NOTIFY_FROM_EMAIL'] as const) {
+      const value = env[name]
+      if (value === undefined) {
+        if (env.RESEND_API_KEY) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [name],
+            message: 'Required when RESEND_API_KEY is set',
+          })
+        }
+      } else if (!z.email().safeParse(value).success) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [name],
+          message: 'Must be an email address',
+        })
+      }
+    }
   })
   .transform(({ BETTER_AUTH_URL, VERCEL_URL, ...rest }, ctx) => {
     const fromVercel =
