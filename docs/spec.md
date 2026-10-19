@@ -1,6 +1,6 @@
-# Used Books E-shop: Spec v13
+# Used Books E-shop: Spec v14
 
-Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04), the M1 and M2 planning rounds (2026-10-08), the domain purchase, the M3 planning round and the M4 build (2026-10-18) are merged in. Sections that changed from v12 are marked **(v13)**; v12 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
+Status: decisions from the first to fourth iteration rounds (2026-10-02 to 2026-10-04), the M1 and M2 planning rounds (2026-10-08), the domain purchase, the M3 planning round and the M4 build (2026-10-18), and the M5 build with the CI and Zásilkovna changes (2026-10-19) are merged in. Sections that changed from v12 are marked **(v13)**; v12 marks are kept as history, and so are the earlier ones. Remaining open items are in section 13.
 
 ## 1. Purpose **(v11)**
 
@@ -167,11 +167,11 @@ Statuses: `pending_payment` → `paid` → `shipped` → `completed`, plus `canc
 - Seller can add a tracking number and mark as shipped.
 - Admin offers a **"write to buyer" button** that opens a prefilled message (mailto), covering payment received, shipped, and reservation reminders without any email infrastructure.
 
-### 6.8 Notifications (replaces transactional emails in v1) **(v5)**
+### 6.8 Notifications (replaces transactional emails in v1) **(v14)**
 
 - **To the seller:** new order or reservation (including cash on pickup), and the reservation-expiring reminder (about 24h after checkout, unpaid orders only, once per order).
 - Payment itself is seen in her bank app. The app cannot know about it until she marks it paid.
-- **Delivered by email to the seller's own address (v5)** through a `SellerNotifier` interface. The planned implementation uses a free provider's sandbox sender, which can deliver only to the email of the provider account owner, so the production provider account must be registered with her address (during development, notifications go to the developer's own address). To verify in a short spike at M5: reliability of the sandbox sender, spam-folder behavior, and a fallback (a single verified sender address on another free provider). A Telegram bot stays an option behind the same interface.
+- **Delivered by email to the seller's own address (v14)** through a `SellerNotifier` interface, sent with Resend from `objednavky@lucys-bookshop.cz` on the verified domain, so there is no sandbox sender and any recipient works. A new-order mail goes out right after checkout and is sent at least once (`orders.seller_notified_at`, retried by the hourly job); the reminder is sent at most once. Messages are plain text and carry no buyer contact details, only a link to the admin. Without a key (development, CI) they are only logged. The first test mail to the seller's own mailbox (Hotmail) landed in Junk, so she marks the sender as not junk before launch (M7). A Telegram bot as a second channel behind the same interface comes after launch. Decision note 0018.
 - **Buyers receive no emails in v1.** An `EmailSender` interface is added later, together with a verified sending domain on `lucys-bookshop.cz`.
 
 ### 6.9 Admin area **(v10)**
@@ -237,14 +237,14 @@ This is not legal advice.
 **Accounts and handover:**
 
 - Development runs on the developer's accounts. After testing, production moves to **accounts owned by the seller**, so her shop does not use the developer's free-tier limits. The developer keeps access (shared credentials in a password manager with 2FA where a service has no second-user option, invited membership elsewhere).
-- **Domain (v13):** `lucys-bookshop.cz` is bought; who is the registered owner must be settled before the handover (M8), and the registration should end up with the seller. It is connected to the production Vercel project in M7 (DNS, HTTPS, redirect from `www`). The `vercel.app` address is not shared with buyers.
-- **One public repository** in the developer's GitHub. Deployment to the seller's Vercel project runs from **GitHub Actions** with a deploy token from her account. Her secrets live in repository secrets.
-- Handover steps: Vercel (new project in her account via CI), Neon (restore a `pg_dump` into her project), Cloudflare R2 (copy objects and update the base URL env var), update secrets.
+- **Domain (v14):** `lucys-bookshop.cz` is bought and registered at Active24, with DNS on their Websupport nameservers. The registration stays with the developer, as domain maintainer, so the domain is not part of the handover (M8); Vercel and Resend are connected to it through DNS records. It is connected to the production Vercel project in M7 (DNS, HTTPS, redirect from `www`): add Vercel's records to the existing zone and keep the Websupport nameservers, so the Resend records stay. The `vercel.app` address is not shared with buyers.
+- **One public repository** in the developer's GitHub. Until the handover, Vercel deploys every merge through its Git integration; at the handover (M8), deployment to the seller's Vercel project runs from **GitHub Actions** with a deploy token from her account. Her secrets live in repository secrets.
+- Handover steps: Vercel (new project in her account via CI), Neon (restore a `pg_dump` into her project), Cloudflare R2 (copy objects and update the base URL env var), update secrets. The domain registration is not moved: it stays with the developer.
 - **Public repo hygiene:** seed data is invented books, never her real listings; no secrets, bank account number, or personal data in the repo.
 
 Also: privacy policy and cookie rules (GDPR); QR payments need only the seller's account number, no provider onboarding.
 
-## 10. Tech stack and architecture **(v12)**
+## 10. Tech stack and architecture **(v14)**
 
 - **Frontend and app:** Next.js (App Router), TypeScript.
 - **Visual direction (v5):** this is a working prototype first. Shop name is the working title "Lucy's Bookshop", kept in one config value and the messages file, never hard-coded in components, because it will change. Styling is very light and almost brutalist, but accessible: system font stack, high contrast (WCAG AA), visible focus states, large touch targets, no decorative shadows or gradients. All colors, spacing and type sizes are design tokens (CSS custom properties), so a later art direction is mostly a token swap. Art direction is decided after the shop works.
@@ -262,8 +262,11 @@ Also: privacy policy and cookie rules (GDPR); QR payments need only the seller's
 - **Auth (admin only):** Better Auth, email and password, sign-up disabled, one admin level, accounts created by script
 - **Internationalization:** a locale-routing library for the App Router (next-intl is the likely choice), Czech with no URL prefix and English later under `/en`. All UI text in `messages/cs.json`. Money and dates formatted with `Intl`. Book titles, authors, and descriptions are not translated; genres and condition labels are translated through keys. `locale` is stored on the order.
 - **Testing (proposed):** Vitest for unit and service tests (same API as Jest), React Testing Library for components, Playwright for a few end-to-end checkout flows and for async Server Components, which unit test runners do not cover well. The reservation race-condition test runs against a real Postgres (Docker locally and in CI), not mocks. Database tests are `*.int.test.ts` files in a separate Vitest project run by `pnpm test:db`, each run using a throwaway database on the existing Postgres; `pnpm test` stays database-free (see decision note 0010).
-- **CI/CD and jobs:** GitHub Actions for lint, typecheck, test, build, and **deploy to Vercel** with a token, **applying pending database migrations to Neon as part of the deploy** (a deploy must never go live ahead of its schema; until this exists, run `pnpm db:migrate` against Neon by hand before merging a PR that adds a migration); plus scheduled workflows for (1) the seller reminder, calling a secret-protected endpoint every hour or so (runs can be delayed slightly), and (2) a periodic database backup.
-- **CI (decided, decision note 0020):** GitHub Actions on pull requests and once a week, not again after the merge: the rulesets on `main` require `check` and `e2e` with "branch must be up to date". One production build per run (in the e2e job), superseded pull request runs are cancelled. About 45% fewer runner minutes than before, with the same coverage; the note has the measurements and a recipe for a private repository.
+- **CI/CD and jobs (v14):**
+  - **CI** is GitHub Actions (`check`: format, lint, typecheck, unit and database tests; `e2e`: Playwright with one production build) on pull requests and once a week, not again after the merge: the rulesets on `main` require both checks with "branch must be up to date". Superseded pull request runs are cancelled. About 45% fewer runner minutes than before with the same coverage (decision note 0020, with the measurements and a recipe for a private repository).
+  - **Deploys:** Vercel deploys every merge to `main` through its Git integration. The production build **applies pending database migrations to Neon first** (a deploy never goes live ahead of its schema), so migrations must be additive; previews never migrate (decision note 0019).
+  - **Jobs:** one hourly job (`POST /api/jobs/hourly` behind a `JOBS_SECRET` bearer token: the seller reminder and the retry of unsent mails) is called by a **Cloudflare Worker** cron trigger (free plan), not by GitHub Actions (scheduled workflows are switched off after 60 days without repository activity) or Vercel Cron (once a day on Hobby). It records its last run, and the admin warns when none is recorded for 3 hours (decision note 0018, `docs/hourly-job.md`).
+  - A **periodic database backup** is still to be built (M5, see open questions).
 - **Hosting:** Vercel Hobby (see 9 for the terms caveat). Avoid Vercel-only features (Blob, Edge Config, Vercel Cron, image optimization).
 
 ## 11. Milestones **(v11)**
@@ -277,16 +280,17 @@ Each milestone ends with a short written note on the design choices made and why
 - **M2 Admin:** Better Auth login (one admin level, two script-created accounts), phone-first add/edit book with the browser-side resize and presigned upload pipeline (up to 5 photos, placeholder), status management.
 - **M3 Cart and reservation:** client cart, server validation, lazy-expiry reservation logic with tests for the race condition.
 - **M4 Checkout and payment:** pickup and Zásilkovna options, order creation, SPAYD QR generation, order page with token, cash on pickup, `PaymentConfirmer` with the manual implementation.
-- **M5 Orders and notifications:** admin order management, "mark paid", "write to buyer", `SellerNotifier`, scheduled seller-reminder workflow, backup workflow. After this milestone the shop works end to end.
+- **M5 Orders and notifications:** admin order management, "mark paid", "write to buyer", `SellerNotifier`, the hourly job (seller reminder and retry, called by a Cloudflare Worker), backup workflow (the last open item). After this milestone the shop works end to end.
 - **M6 Filters, sorts, search:** server-side, URL-synced, on top of the working shop. Must be done before launch.
-- **M7 Launch prep:** legal pages for the chosen scenario, hosting terms resolved, SEO, accessibility pass, CI deploy (including the migration step against Neon), a real test purchase and payment.
+- **M7 Launch prep:** legal pages for the chosen scenario, hosting terms resolved, SEO, accessibility pass, production deploy checks (migrations already run in the Vercel build, decision note 0019), a real test purchase and payment, and the first mail marked as not junk in the seller's mailbox.
 - **M8 Handover:** rehearsal (restore the latest backup into a throwaway Neon project, deploy a second Vercel project from CI, run a full checkout against it), then move production to the seller's accounts.
 
-## 12. Later ideas **(v12)**
+## 12. Later ideas **(v14)**
 
 - Buyer emails (confirmation with payment details, payment received, shipped) through a transactional email service, sending from `lucys-bookshop.cz`
 - CSV statement import, then Raiffeisenbank Premium API if available for her account type
-- Zásilkovna pickup-point widget and API
+- Zásilkovna pickup-point widget with server-side validation, and API: **after release**, once the seller has a Packeta API key (until then buyers get a link to Packeta's map and an example), then a CSV export of orders in Packeta's import format
+- Telegram bot as a second channel for seller notifications, after launch
 - English content
 - Buyer accounts and order history
 - ISBN-scan from phone camera
@@ -297,7 +301,7 @@ Each milestone ends with a short written note on the design choices made and why
 - Automatic buyer reminder before a reservation expires
 - Additional condition grades
 
-## 13. Open questions **(v5)**
+## 13. Open questions **(v14)**
 
 Decided so far: payments, reservation, backend shape, database, ORM, auth and admin approach, sold and reserved visibility, condition grades, internationalization, shipping, accounts and handover, email deferral, duplicate copies, URL and slugs, image pipeline, styling, component approach, working agreement, AI features after v1, seller notification by email, cash on pickup extension by seller only, working shop name and visual direction.
 
@@ -307,6 +311,10 @@ Still open:
 
 - Trader or private seller (section 9): deferred on purpose. It must be settled before going live (M7), together with the Vercel Hobby terms question.
 
+**Operations**
+
+- Backups: where the encrypted dumps go. Plan: a private R2 bucket with a write-only token, `age` encryption with the private key held by the developer, started by the Cloudflare Worker, a restore rehearsal at M8.
+
 **Tooling to confirm** (treated as defaults unless changed)
 
 - Forms and data fetching approach, and the testing stack (section 10)
@@ -314,7 +322,7 @@ Still open:
 **Later**
 
 - Art direction. The shop name and URL are settled (v13): `lucys-bookshop.cz`.
-- Domain registration owner (developer or seller), and the image address once the domain exists (a subdomain, or served by the app).
+- The image address once the domain exists (a subdomain, or served by the app).
 - Zásilkovna flat price: the amount is set in admin before launch.
 
 ## 14. Decisions log
@@ -358,4 +366,10 @@ Still open:
 | 2026-10-18 | Shop name agreed and domain `lucys-bookshop.cz` bought; connected to production at M7, buyer emails still after v1; registration owner to settle before M8                                                                                                                                                                                                                                           |
 | 2026-10-18 | M3: cart is a page showing the subtotal only (shipping at checkout); `orders` tables and `reservedByOrderId` in M3; `reserveBooks` locks rows in id order and checks before writing; cart keeps only book ids and seen prices in the browser (ADR 0016)                                                                                                                                              |
 | 2026-10-18 | M4: one transaction places an order and charges the server's prices, comparing the book and shipping prices the buyer saw; number = year × 10000 + sequence; checkout key, `SELLER_IBAN`, Postgres rate limit, Zásilkovna only once priced (ADR 0017)                                                                                                                                                |
+| 2026-10-19 | Domain registration (Active24, DNS on Websupport) stays with the developer as domain maintainer, so it is not part of the M8 handover; Resend is verified on the domain                                                                                                                                                                                                                              |
 | 2026-10-19 | CI runs on pull requests and weekly, not after the merge (rulesets require `check` and `e2e`, up to date); one production build per run; superseded runs cancelled (note 0020)                                                                                                                                                                                                                       |
+| 2026-10-19 | M5 order actions: only Zásilkovna orders ship (tracking number required, fixable later), a pickup goes paid to completed, completing is manual; a refund frees the books by itself; cancel also works on expired orders; the seller extends a cash reservation by 48 h; mark paid, cancel and refund ask first (note 0018)                                                                           |
+| 2026-10-19 | M5 seller notifications: email through Resend on the verified lucys-bookshop.cz (no sandbox sender); new-order mail sent after checkout at least once and retried, reminder at most once, plain text without buyer contact details; Telegram as a second channel after launch (note 0018)                                                                                                            |
+| 2026-10-19 | M5 hourly job: POST /api/jobs/hourly behind a secret, called by a Cloudflare Worker cron (not GitHub Actions: 60-day rule; not Vercel Cron: daily on Hobby); the admin warns when no run is recorded for 3 hours (note 0018)                                                                                                                                                                         |
+| 2026-10-19 | Migrations run in the Vercel production build, additive only (a test enforces it), with a lock, one transaction and an emergency switch; previews never migrate (note 0019)                                                                                                                                                                                                                          |
+| 2026-10-19 | Zásilkovna: buyers get a link to Packeta's pickup point map and an example now; the widget with server-side validation waits until after release, for the seller's Packeta API key                                                                                                                                                                                                                   |
