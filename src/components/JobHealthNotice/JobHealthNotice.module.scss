@@ -1,0 +1,16 @@
+@use 'utilities' as *;
+
+// Heavy outline and bold title, so it is seen at once and does not depend on colour.
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: calc(var(--border-width) * 3) solid var(--color-text);
+  background: var(--color-bg);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}

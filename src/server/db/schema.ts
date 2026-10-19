@@ -255,6 +255,10 @@ export const settings = pgTable(
     id: integer('id').primaryKey().default(1),
     zasilkovnaPriceMinor: integer('zasilkovna_price_minor'),
     pickupInstructions: text('pickup_instructions').notNull().default(''),
+    // When the hourly job last ran without a step failing (spec 8). The admin
+    // warns when it is older than a few hours, or null: a scheduler that has
+    // silently stopped is the one failure nobody would otherwise notice.
+    jobsLastRunAt: timestamp('jobs_last_run_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
