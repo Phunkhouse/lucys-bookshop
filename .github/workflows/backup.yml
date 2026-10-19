@@ -85,7 +85,9 @@ jobs:
       # Tells the shop, so the admin warns when backups stop. It runs only after
       # the backup is stored and checked. If this call fails the run goes red, so
       # the failure is noticed, although the backup itself is safe in the bucket.
-      # The address must be https: the secret travels with the call.
+      # The address must be https: the secret travels with the call. curl does not
+      # follow redirects, so the secret can never be sent on to another host. Plain
+      # --retry covers timeouts and 5xx but not a 401 or 404, which will not mend.
       - name: Report to the shop
         env:
           BACKUP_REPORT_SECRET: ${{ secrets.BACKUP_REPORT_SECRET }}
@@ -95,7 +97,7 @@ jobs:
           shop="${SHOP_URL%/}"
           case "$shop" in https://*) ;; *) echo "SHOP_URL must start with https://"; exit 1 ;; esac
           test -n "$BACKUP_REPORT_SECRET" || { echo "BACKUP_REPORT_SECRET is not set"; exit 1; }
-          curl --fail --silent --show-error --max-time 30 --retry 3 --retry-all-errors \
+          curl --fail --silent --show-error --max-time 30 --retry 3 \
             --request POST --header "Authorization: Bearer $BACKUP_REPORT_SECRET" \
             "${shop}/api/jobs/backup-report" > /dev/null \
             || { echo "The backup is stored, but reporting it to the shop failed"; exit 1; }
