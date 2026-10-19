@@ -5,6 +5,12 @@
 name = "lucys-bookshop-hourly-job"
 main = "index.js"
 compatibility_date = "2026-10-01"
+# No public workers.dev address: the Worker has nothing to show a visitor.
+workers_dev = false
+
+# The shop's public address, not a secret. Uncomment and set it before deploying.
+# [vars]
+# SHOP_URL = "https://shop.example"
 
 [triggers]
 # Every hour at minute 17, UTC. Not on the hour: scheduled runs are most often

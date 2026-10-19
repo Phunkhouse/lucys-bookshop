@@ -27,8 +27,6 @@ A `JOBS_SECRET` shorter than 32 characters stops the shop from starting, like `B
 
 ## One-time setup
 
-The names of menus in the Cloudflare dashboard change now and then; the steps are the same.
-
 1. **Make the secret** on your computer and keep it in a password manager:
 
    ```bash
@@ -36,27 +34,39 @@ The names of menus in the Cloudflare dashboard change now and then; the steps ar
    ```
 
 2. **Vercel:** Project, Settings, Environment Variables. Add `JOBS_SECRET` for **Production** only. Redeploy, because a setting is read at deploy time.
-3. **Cloudflare, create the Worker:** Workers & Pages, Create, Create Worker. Name it `lucys-bookshop-hourly-job` and deploy the example. Then Edit code, replace everything with the contents of [`workers/hourly-job/index.js`](../workers/hourly-job/index.js), and deploy.
-4. **Cloudflare, settings of the Worker:** Settings, Variables and secrets. Add `SHOP_URL` as **Text** and `JOBS_SECRET` as **Secret** (the same value as in Vercel). Deploy.
-5. **Cloudflare, the trigger:** Settings, Triggers, Cron Triggers. Add `17 * * * *`. A change can take up to 15 minutes to take effect.
+3. **Cloudflare, with the command line** (recommended). From the project folder:
 
-With the command line instead of the dashboard, from `workers/hourly-job/` (nothing is added to the project). Pick one way and keep to it: a deploy with wrangler can overwrite settings made in the dashboard.
+   ```bash
+   cd workers/hourly-job
+   pnpm dlx wrangler login
+   ```
 
-1. Add the shop's address to `wrangler.toml` (it is not a secret):
+   `wrangler login` opens your browser: sign in to Cloudflare and choose **Allow**. Nothing is installed in the project.
+
+4. **Set the shop's address.** Open `workers/hourly-job/wrangler.toml`, remove the `#` in front of the two `[vars]` lines and put the shop's public address in (it is not a secret):
 
    ```toml
    [vars]
    SHOP_URL = "https://shop.example"
    ```
 
-2. Deploy and set the secret:
+5. **Deploy.** This creates the Worker and its cron trigger (`17 * * * *`, from the same file):
 
    ```bash
    pnpm dlx wrangler deploy
+   ```
+
+6. **Set the secret**, the same value as in Vercel. Wrangler asks for it and hides what you type:
+
+   ```bash
    pnpm dlx wrangler secret put JOBS_SECRET
    ```
 
-The cron trigger comes from `wrangler.toml`.
+7. **Look at it in the dashboard:** Workers & Pages, the Worker `lucys-bookshop-hourly-job`, Settings. Under **Variables and Secrets** you should see `SHOP_URL` (text) and `JOBS_SECRET` (hidden). Under **Triggers**, **Cron Triggers**, `17 * * * *` should be listed. A change to a trigger can take up to 15 minutes to take effect.
+
+Do not mix this with settings made by hand in the dashboard: a deploy with wrangler can overwrite them. To change the address later, edit `wrangler.toml` and deploy again. To change the secret, run the `secret put` command again.
+
+Cloudflare has been changing its dashboard. Creating the Worker there is possible too (Workers & Pages, Create, start from a template, replace its code with [`workers/hourly-job/index.js`](../workers/hourly-job/index.js), add the two settings under Settings, Variables and Secrets, and the cron trigger under Settings, Triggers), but the menu names move, so the command line is the reliable way.
 
 ## Checking that it works
 
