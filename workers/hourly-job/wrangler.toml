@@ -1,7 +1,9 @@
-# The Cloudflare Worker that calls the shop's hourly job (see docs/hourly-job.md).
+# The Cloudflare Worker that calls the shop's hourly job (docs/hourly-job.md) and
+# starts the daily backup (docs/backup.md). The name is older than the backup;
+# renaming it would create a second Worker, so it stays.
 # Only for deploying with wrangler; pasting index.js into the dashboard needs
-# none of this. Nothing about the shop belongs here: SHOP_URL and JOBS_SECRET are
-# set on the Worker itself, as secrets (`wrangler secret put`).
+# none of this. Nothing secret belongs here: SHOP_URL, JOBS_SECRET and
+# GITHUB_TOKEN are set on the Worker itself, as secrets (`wrangler secret put`).
 name = "lucys-bookshop-hourly-job"
 main = "index.js"
 compatibility_date = "2026-10-01"
@@ -16,7 +18,13 @@ workers_dev = false
 [observability]
 enabled = true
 
+# Not secret: the repository whose backup workflow is started.
+[vars]
+BACKUP_REPO = "Phunkhouse/lucys-bookshop"
+
 [triggers]
-# Every hour at minute 17, UTC. Not on the hour: scheduled runs are most often
-# delayed at the start of an hour.
-crons = ["17 * * * *"]
+# Every hour at minute 17, UTC: the hourly job. Every day at 02:41 UTC: the backup.
+# Not on the hour: scheduled runs are most often delayed at the start of an hour.
+# The Worker tells them apart by the expression, so BACKUP_CRON in index.js must
+# match the second one. The free plan allows 5 cron triggers per account.
+crons = ["17 * * * *", "41 2 * * *"]
