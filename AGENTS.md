@@ -29,7 +29,7 @@ pnpm lint           # ESLint
 pnpm typecheck      # runs `next typegen` first (route types are generated and git-ignored)
 pnpm test           # Vitest: unit + component tests, no database needed
 pnpm test:watch     # Vitest in watch mode
-pnpm test:db        # Vitest integration tests (*.int.test.ts) on a throwaway database; needs pnpm db:up. CI runs it. Run it when touching schema or queries (pnpm check does not)
+pnpm test:db        # Vitest integration tests (*.int.test.ts) on a throwaway database; needs pnpm db:up, Docker and the `age` tool (`brew install age`) for the backup restore drill. CI runs it. Run it when touching schema or queries (pnpm check does not)
 pnpm test:e2e       # Playwright (Chromium). First run: pnpm exec playwright install chromium
 
 pnpm db:up          # start local Postgres (Docker)
@@ -45,6 +45,7 @@ pnpm admin:create   # create an admin account (needs only DATABASE_URL; asks for
 - Ask before `docker compose down -v` (it deletes all local database data).
 - Never use `drizzle-kit push`. Schema changes go through `db:generate` and `db:migrate`.
 - Production migrations run by themselves in the Vercel build (`pnpm migrate:deploy`, ADR 0019, `docs/migrations.md`): never run them against Neon by hand. Keep every migration additive (a test enforces it); removing something takes two PRs.
+- Backups: `docs/backup.md` (ADR 0021). The age private key never goes into the repo, GitHub or Cloudflare.
 - Scripts in `scripts/` start with `import 'dotenv/config'` and run with `tsx`.
 
 ## Stack and tooling

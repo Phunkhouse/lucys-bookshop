@@ -1,0 +1,82 @@
+name: Backup
+
+# A daily encrypted copy of the production database in a private R2 bucket
+# (ADR 0021, docs/backup.md). Nothing here schedules it: a Cloudflare Worker
+# dispatches it, because GitHub switches scheduled workflows off in a repository
+# without activity for 60 days. It can also be run by hand from the Actions tab.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One backup at a time, and a running one is never cancelled halfway.
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Install age
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
+
+      # The dump is written under RUNNER_TEMP and encrypted before it goes
+      # anywhere. It is never an artifact or a cache, the repository is public.
+      # pg_dump runs from the same image as local development: the newest client
+      # reads any older Neon server. The address travels as an environment
+      # variable, so it is not in a command line.
+      - name: Dump the database
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "$BACKUP_DATABASE_URL" || { echo "BACKUP_DATABASE_URL is not set"; exit 1; }
+          docker run --rm -e BACKUP_DATABASE_URL postgres:18 \
+            sh -c 'pg_dump --format=custom --no-owner --no-privileges "$BACKUP_DATABASE_URL"' \
+            > "$RUNNER_TEMP/dump"
+          # A dump that is empty or that pg_restore cannot read is not a backup.
+          test -s "$RUNNER_TEMP/dump"
+          docker run --rm -i postgres:18 pg_restore --list < "$RUNNER_TEMP/dump" > /dev/null
+
+      # Only the public half of the key is here, so this job cannot read a backup.
+      - name: Encrypt
+        env:
+          AGE_PUBLIC_KEY: ${{ vars.AGE_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          case "$AGE_PUBLIC_KEY" in age1*) ;; *) echo "AGE_PUBLIC_KEY is not an age public key"; exit 1 ;; esac
+          age --recipient "$AGE_PUBLIC_KEY" --output "$RUNNER_TEMP/dump.age" "$RUNNER_TEMP/dump"
+          rm "$RUNNER_TEMP/dump"
+          test -s "$RUNNER_TEMP/dump.age"
+
+      # R2 speaks the S3 protocol. The bucket is in the EU jurisdiction, which has
+      # its own address. The two checksum settings stop the AWS CLI from sending
+      # checksum headers R2 does not support.
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+        run: |
+          set -euo pipefail
+          day=$(date -u +%F)
+          stamp=$(date -u +%Y%m%dT%H%M%SZ)
+          key="daily/${day}/lucys-bookshop-${stamp}.dump.age"
+          endpoint="https://${R2_ACCOUNT_ID}.eu.r2.cloudflarestorage.com"
+          aws s3 cp "$RUNNER_TEMP/dump.age" "s3://${R2_BUCKET}/${key}" --endpoint-url "$endpoint" --only-show-errors
+          # The object must exist and be as large as the file that was sent.
+          sent=$(wc -c < "$RUNNER_TEMP/dump.age" | tr -d ' ')
+          stored=$(aws s3api head-object --bucket "$R2_BUCKET" --key "$key" --endpoint-url "$endpoint" --query ContentLength --output text)
+          test "$sent" = "$stored" || { echo "Uploaded $stored bytes, expected $sent"; exit 1; }
+          echo "Backup stored: ${key} (${sent} bytes)"
