@@ -387,6 +387,12 @@
           "failed": "Akce se nepodařila. Zkuste to prosím znovu."
         }
       }
+    },
+    "jobHealth": {
+      "title": "Hodinová kontrola nefunguje",
+      "never": "Hodinová kontrola ještě nikdy neběžela.",
+      "stale": "Hodinová kontrola neběžela od {when}.",
+      "effect": "Upozornění na končící rezervace a opakované odeslání e-mailů teď nefunguje. Informujte prosím správce obchodu."
     }
   },
   "Checkout": {

@@ -1,0 +1,1 @@
+ALTER TABLE "settings" ADD COLUMN "jobs_last_run_at" timestamp with time zone;

@@ -1,10 +1,14 @@
 import { getTranslations } from 'next-intl/server'
 import { AdminBookRow } from '@/components/AdminBookRow'
+import { JobHealthNotice } from '@/components/JobHealthNotice'
 import { SignOutButton } from '@/components/SignOutButton'
+import { env } from '@/config/env'
 import { Link } from '@/i18n/navigation'
 import { requireAdmin } from '@/lib/auth'
 import { listAdminBooks } from '@/server/admin/book-list'
 import { parseStatusFilter, STATUS_FILTERS } from '@/server/admin/status-filter'
+import type { JobHealth } from '@/server/job-health'
+import { getJobHealth } from '@/server/job-heartbeat'
 import { deleteBookAction, setBookHiddenAction } from './actions'
 import css from './page.module.scss'
 
@@ -18,6 +22,11 @@ export default async function AdminHome({
   const now = new Date()
   const { items, counts } = await listAdminBooks(actor, { status, now })
   const t = await getTranslations('Admin')
+  // Without JOBS_SECRET the job endpoint is off (development, previews): there
+  // is nothing to warn about.
+  const jobHealth: JobHealth = env.JOBS_SECRET
+    ? await getJobHealth(actor, now)
+    : { status: 'ok' }
 
   return (
     <main className={css.main}>
@@ -36,6 +45,7 @@ export default async function AdminHome({
           <SignOutButton />
         </div>
       </header>
+      <JobHealthNotice health={jobHealth} />
       <p>{t('signedInAs', { email: actor.email })}</p>
 
       <nav aria-label={t('books.filterLabel')}>
