@@ -425,8 +425,11 @@
       "pickup": "Osobní odběr (zdarma)",
       "zasilkovna": "Zásilkovna ({price})",
       "pickupPoint": "Výdejní místo Zásilkovny",
-      "pickupPointHint": "Napište název nebo adresu výdejního místa.",
-      "pickupInstructions": "Osobní odběr"
+      "pickupPointHint": "Najděte si výdejní místo na mapě Zásilkovny a sem napište jeho název a adresu, například „<example>Z-BOX Praha 1, Dlouhá 5</example>“.",
+      "pickupInstructions": "Osobní odběr",
+      "pickupPointExample": "Z-BOX Praha 1, Dlouhá 5",
+      "pickupPointFind": "Najít výdejní místo na mapě Zásilkovny",
+      "opensInNewTab": "(otevře se v novém okně)"
     },
     "payment": {
       "heading": "Platba",

@@ -1,6 +1,10 @@
 import { z } from 'zod'
 import { cartInputSchema } from './cart-schema'
 
+// The longest pickup point text the server accepts. The form's input uses it too, so
+// the two cannot drift apart.
+export const SHIPPING_DETAILS_MAX = 200
+
 // Shared by the checkout form (browser) and placeOrder (server), spec 6.5.
 // Prices and totals are deliberately not part of it: the server recalculates.
 export const SHIPPING_METHODS = ['pickup', 'zasilkovna'] as const
@@ -29,7 +33,7 @@ export const checkoutInputSchema = z
     shippingMethod: z.enum(SHIPPING_METHODS),
     paymentMethod: z.enum(PAYMENT_METHODS),
     // The Zásilkovna pickup point, typed by the buyer. Ignored for pickup.
-    shippingDetails: z.string().trim().max(200).optional(),
+    shippingDetails: z.string().trim().max(SHIPPING_DETAILS_MAX).optional(),
     acceptTerms: z.literal(true),
     acceptPrivacy: z.literal(true),
     // Chosen by the browser per attempt, so a double click is one order.

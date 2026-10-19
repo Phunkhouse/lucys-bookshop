@@ -146,6 +146,18 @@ test.describe('checkout', () => {
     await expect(summary.getByText(/^89\s*Kč$/)).toBeVisible()
     await expect(summary.getByText(/^479\s*Kč$/)).toBeVisible()
 
+    // The buyer is helped to find a point: a link to Packeta's own list and map,
+    // which opens beside the form (not followed here, it is another site).
+    await expect(
+      page.getByRole('link', {
+        name: /Najít výdejní místo na mapě Zásilkovny/,
+      }),
+    ).toHaveAttribute('href', 'https://www.zasilkovna.cz/pobocky')
+    await expect(page.getByLabel('Výdejní místo Zásilkovny')).toHaveAttribute(
+      'placeholder',
+      'Z-BOX Praha 1, Dlouhá 5',
+    )
+
     await fillContactAndConsent(page)
     // Without the pickup point the form says so and sends nothing.
     await page.getByRole('button', { name: 'Odeslat objednávku' }).click()
