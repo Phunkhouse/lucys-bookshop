@@ -35,7 +35,7 @@ pnpm test:e2e       # Playwright (Chromium). First run: pnpm exec playwright ins
 pnpm db:up          # start local Postgres (Docker)
 pnpm db:down        # stop it, data is kept
 pnpm db:generate    # generate a migration from schema changes
-pnpm db:migrate     # apply migrations
+pnpm db:migrate     # apply migrations to your local database
 pnpm db:ping        # verify the database connection
 pnpm admin:create   # create an admin account (needs only DATABASE_URL; asks for the password; sign-up is disabled)
 ```
@@ -44,6 +44,7 @@ pnpm admin:create   # create an admin account (needs only DATABASE_URL; asks for
 - Use only scripts that exist in `package.json`. Check it before inventing a command.
 - Ask before `docker compose down -v` (it deletes all local database data).
 - Never use `drizzle-kit push`. Schema changes go through `db:generate` and `db:migrate`.
+- Production migrations run by themselves in the Vercel build (`pnpm migrate:deploy`, ADR 0019, `docs/migrations.md`): never run them against Neon by hand. Keep every migration additive (a test enforces it); removing something takes two PRs.
 - Scripts in `scripts/` start with `import 'dotenv/config'` and run with `tsx`.
 
 ## Stack and tooling

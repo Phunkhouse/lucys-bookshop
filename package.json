@@ -19,6 +19,7 @@
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "migrate:deploy": "tsx scripts/migrate-on-deploy.ts",
     "db:ping": "tsx scripts/db-ping.ts",
     "db:seed": "tsx scripts/seed.ts",
     "admin:create": "tsx scripts/create-admin.ts",
