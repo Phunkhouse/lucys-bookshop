@@ -13,6 +13,7 @@ import type { CartInput } from '@/lib/cart-schema'
 import { checkoutInputSchema } from '@/lib/checkout-schema'
 import { useCart } from '@/lib/use-cart'
 import { useMoney } from '@/lib/use-money'
+import { randomUuid } from '@/lib/random-uuid'
 import type { CartValidation } from '@/server/cart'
 import type { CartLine } from '@/server/cart-rules'
 import type { CheckoutResult } from '@/server/checkout'
@@ -107,7 +108,7 @@ export function CheckoutForm({
   const [placed, setPlaced] = useState(false)
   // One key per checkout attempt: pressing again after a lost answer returns
   // the order the first press made instead of a second one.
-  const [checkoutKey, setCheckoutKey] = useState(() => crypto.randomUUID())
+  const [checkoutKey, setCheckoutKey] = useState(() => randomUuid())
 
   const cartKey = JSON.stringify(items)
 
@@ -206,7 +207,7 @@ export function CheckoutForm({
         // ordered now, so they leave the cart; anything else stays, and the
         // next order needs a key of its own.
         for (const shortId of result.shortIds) remove(shortId)
-        setCheckoutKey(crypto.randomUUID())
+        setCheckoutKey(randomUuid())
         setFailure({ kind: 'already_placed', orderToken: result.publicToken })
         return
       }
