@@ -15,11 +15,11 @@ The endpoint answers only with counts, for example `{"retried":{"sent":0,"failed
 
 ## Settings
 
-| Where               | Name          | Value                                                       | Secret? |
-| ------------------- | ------------- | ----------------------------------------------------------- | ------- |
-| Vercel (Production) | `JOBS_SECRET` | At least 32 characters                                      | **Yes** |
-| Cloudflare Worker   | `JOBS_SECRET` | **The same value** as in Vercel                             | **Yes** |
-| Cloudflare Worker   | `SHOP_URL`    | The shop's public address, `https://...`, no trailing slash | No      |
+| Where               | Name          | Value                                                       | Secret?                             |
+| ------------------- | ------------- | ----------------------------------------------------------- | ----------------------------------- |
+| Vercel (Production) | `JOBS_SECRET` | At least 32 characters                                      | **Yes**                             |
+| Cloudflare Worker   | `JOBS_SECRET` | **The same value** as in Vercel                             | **Yes**                             |
+| Cloudflare Worker   | `SHOP_URL`    | The shop's public address, `https://...`, no trailing slash | No, but set as a secret (see below) |
 
 Leave `JOBS_SECRET` unset in Vercel **Preview**, so preview deployments have the endpoint switched off. Locally it can stay empty too.
 
@@ -43,28 +43,24 @@ A `JOBS_SECRET` shorter than 32 characters stops the shop from starting, like `B
 
    `wrangler login` opens your browser: sign in to Cloudflare and choose **Allow**. Nothing is installed in the project.
 
-4. **Set the shop's address.** Open `workers/hourly-job/wrangler.toml`, remove the `#` in front of the two `[vars]` lines and put the shop's public address in (it is not a secret):
-
-   ```toml
-   [vars]
-   SHOP_URL = "https://shop.example"
-   ```
-
-5. **Deploy.** This creates the Worker and its cron trigger (`17 * * * *`, from the same file):
+4. **Deploy.** This creates the Worker and its cron trigger (`17 * * * *`, from `wrangler.toml`):
 
    ```bash
    pnpm dlx wrangler deploy
    ```
 
-6. **Set the secret**, the same value as in Vercel. Wrangler asks for it and hides what you type:
+5. **Set the two settings.** Wrangler asks for each value and hides what you type. First the shop's public address, then the secret, the same value as in Vercel:
 
    ```bash
+   pnpm dlx wrangler secret put SHOP_URL
    pnpm dlx wrangler secret put JOBS_SECRET
    ```
 
-7. **Look at it in the dashboard:** Workers & Pages, the Worker `lucys-bookshop-hourly-job`, Settings. Under **Variables and Secrets** you should see `SHOP_URL` (text) and `JOBS_SECRET` (hidden). Under **Triggers**, **Cron Triggers**, `17 * * * *` should be listed. A change to a trigger can take up to 15 minutes to take effect.
+   The address is not really a secret, but a secret is kept across deploys and nothing in the project has to be edited, so it is the simplest way. Until both are set, a run fails with a message naming the missing one. That is expected for the first minutes.
 
-Do not mix this with settings made by hand in the dashboard: a deploy with wrangler can overwrite them. To change the address later, edit `wrangler.toml` and deploy again. To change the secret, run the `secret put` command again.
+6. **Check the cron trigger** in the dashboard: Workers & Pages, the Worker `lucys-bookshop-hourly-job`, Settings, Triggers, Cron Triggers. `17 * * * *` should be listed. A change to a trigger can take up to 15 minutes to take effect.
+
+To change the address or the secret later, run the matching `secret put` command again. Do not mix this with settings made by hand in the dashboard.
 
 Cloudflare has been changing its dashboard. Creating the Worker there is possible too (Workers & Pages, Create, start from a template, replace its code with [`workers/hourly-job/index.js`](../workers/hourly-job/index.js), add the two settings under Settings, Variables and Secrets, and the cron trigger under Settings, Triggers), but the menu names move, so the command line is the reliable way.
 
@@ -79,14 +75,14 @@ If you want to be sure straight away, the Worker's editor in the dashboard can f
 
 ## When a run fails
 
-The Worker tries three times (about seven seconds apart in total) after a network error or a 5xx answer. After a 401, 403, 404 or 405 it stops at once, because it will not mend itself. The error says only the status, never the secret or the shop's answer.
+The Worker tries three times (about seven seconds apart in total) after a network error, a 5xx, a 408 or a 429. After any other answer, such as a 401, 403, 404 or 405, it stops at once, because it will not mend itself. Each try waits up to 65 seconds, a little longer than the shop's own 60-second limit for the job, so a slow run is never answered by a second one. The error says only the status, never the secret or the shop's answer.
 
-| Status  | Usual cause                                                                                     |
-| ------- | ----------------------------------------------------------------------------------------------- |
-| 401     | The secret differs between Vercel and the Worker. Set the same value in both.                   |
-| 404/405 | `SHOP_URL` points to the wrong place, or the deployment does not have the endpoint yet.         |
-| 503     | `JOBS_SECRET` is not set in Vercel Production, or the shop was not redeployed after setting it. |
-| 5xx     | The shop itself is down or the database is unreachable. The next run tries again.               |
+| Status  | Usual cause                                                                                                                                                                                                                             |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 401     | The secret differs between Vercel and the Worker. Set the same value in both.                                                                                                                                                           |
+| 404/405 | `SHOP_URL` points to the wrong place, the deployment does not have the endpoint yet, or the address redirects (for example http to https, or no-www to www): a redirect turns the POST into a GET, which the endpoint refuses with 405. |
+| 503     | `JOBS_SECRET` is not set in Vercel Production, or the shop was not redeployed after setting it. The Worker tries this three times too, then fails.                                                                                      |
+| 5xx     | The shop itself is down or the database is unreachable. The next run tries again.                                                                                                                                                       |
 
 To change the secret, put the new value in **both** places. Nothing else changes.
 

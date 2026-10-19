@@ -9,7 +9,9 @@
 // Waits between the attempts: three tries in all, about seven seconds apart in
 // total. A scheduled run that cannot get through then fails and is visible.
 export const RETRY_DELAYS_MS = [2000, 5000]
-const ATTEMPT_TIMEOUT_MS = 30_000
+// Longer than the shop's own limit for this job (60 s, maxDuration of its route),
+// so a slow run is waited for and never answered by a second, overlapping one.
+export const ATTEMPT_TIMEOUT_MS = 65_000
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 
 /**
@@ -33,12 +35,17 @@ function jobUrl(shopUrl) {
   return `${trimmed}/api/jobs/hourly`
 }
 
+// Worth another try: the shop is down or slow (5xx), or something in front of it
+// said "too slow" or "too many" (408, 429). A wrong secret or address is not.
+const isRetriable = (status) =>
+  status >= 500 || status === 408 || status === 429
+
 /**
  * Calls the shop's hourly job. Resolves when the shop answers 200. Fails with
  * a message that never carries the secret or the shop's answer, so a failed run
  * shows up in Cloudflare without leaking anything into its logs.
  *
- * - A network error or a 5xx is tried again, after a short wait.
+ * - A network error, a 5xx, a 408 or a 429 is tried again, after a short wait.
  * - Any other answer (a wrong secret, a wrong address) fails at once: it will
  *   not mend itself.
  *
@@ -56,20 +63,33 @@ export async function callHourlyJob(env, deps = {}) {
 
   let failure = 'unknown error'
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    let response
     try {
-      const response = await send(url, {
+      response = await send(url, {
         method: 'POST',
         headers: { Authorization: `Bearer ${secret}` },
         signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
       })
-      if (response.ok) {
-        console.log(`hourly job: ${await response.text()}`)
-        return
-      }
-      failure = `status ${response.status}`
-      if (response.status < 500) break
     } catch {
       failure = 'network error'
+    }
+
+    if (response?.ok) {
+      // The job has run. Reading what it says is only for the log, so a failure
+      // here must never make this call it again.
+      try {
+        console.log(`hourly job: ${await response.text()}`)
+      } catch {
+        console.log('hourly job: done (the answer could not be read)')
+      }
+      return
+    }
+
+    if (response) {
+      failure = `status ${response.status}`
+      // Let go of the body so no connection is left waiting.
+      await response.body?.cancel().catch(() => {})
+      if (!isRetriable(response.status)) break
     }
     if (attempt < RETRY_DELAYS_MS.length) await sleep(RETRY_DELAYS_MS[attempt])
   }

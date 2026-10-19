@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import worker, { callHourlyJob, RETRY_DELAYS_MS } from './index.js'
+import worker, {
+  ATTEMPT_TIMEOUT_MS,
+  callHourlyJob,
+  RETRY_DELAYS_MS,
+} from './index.js'
 
 const SECRET = 'a-job-secret-of-at-least-thirty-two-characters'
 const env = { SHOP_URL: 'https://shop.example', JOBS_SECRET: SECRET }
@@ -216,6 +220,63 @@ describe('callHourlyJob: when the call fails', () => {
     )
 
     expect(String(failure)).not.toContain(SECRET)
+  })
+})
+
+describe('callHourlyJob: edge cases', () => {
+  // The shop's route allows itself 60 seconds (maxDuration) for a long retry
+  // batch. Giving up sooner would start a second run while the first still works.
+  it('waits at least as long as the shop may take', () => {
+    expect(ATTEMPT_TIMEOUT_MS).toBeGreaterThan(60_000)
+  })
+
+  it.each([408, 429])(
+    'tries again after %s, a proxy or limit in front of the shop',
+    async (code) => {
+      const fetch = vi
+        .fn()
+        .mockImplementationOnce(status(code))
+        .mockImplementationOnce(ok)
+      const { delays, sleep } = sleeper()
+
+      await callHourlyJob(env, { fetch, sleep })
+
+      expect(fetch).toHaveBeenCalledTimes(2)
+      expect(delays).toEqual([RETRY_DELAYS_MS[0]])
+    },
+  )
+
+  // The job has already run once the shop said 200: reading what it says is
+  // only for the log, and must never make the Worker call it again.
+  it('does not call the job again when the answer cannot be read after a 200', async () => {
+    const unreadable = new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.error(new Error('connection reset'))
+        },
+      }),
+      { status: 200 },
+    )
+    const fetch = vi.fn(() => Promise.resolve(unreadable))
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await expect(
+      callHourlyJob(env, { fetch, sleep: sleeper().sleep }),
+    ).resolves.toBeUndefined()
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('lets go of the body of a failed answer, so no connection is left waiting', async () => {
+    const cancelled = vi.fn()
+    const body = () =>
+      new Response(new ReadableStream({ cancel: cancelled }), { status: 401 })
+    const fetch = vi.fn(() => Promise.resolve(body()))
+
+    await expect(
+      callHourlyJob(env, { fetch, sleep: sleeper().sleep }),
+    ).rejects.toThrow(/401/)
+
+    expect(cancelled).toHaveBeenCalledTimes(1)
   })
 })
 
