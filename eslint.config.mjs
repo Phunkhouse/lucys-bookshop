@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // Other checkouts of this repository that tools make under .claude/worktrees
+    // are not part of this one.
+    '.claude/worktrees/**',
   ]),
   {
     files: ['src/server/**/*.{ts,tsx}'],
