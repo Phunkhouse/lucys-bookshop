@@ -56,12 +56,6 @@ const envSchema = databaseEnvSchema
     // The seller's account for QR payments (spec 6.6). Never committed: set per
     // environment. Optional so the shop still starts without it; a bank order
     // then shows no payment details. It must be set before launch.
-    // Email to the seller about new orders (spec 6.8, Resend). Without a key the
-    // messages are only logged. With a key, both addresses are required. The key
-    // is never committed: set per environment.
-    RESEND_API_KEY: optionalText,
-    SELLER_NOTIFY_EMAIL: optionalText,
-    NOTIFY_FROM_EMAIL: optionalText,
     SELLER_IBAN: z
       .string()
       .optional()
@@ -69,6 +63,12 @@ const envSchema = databaseEnvSchema
       .refine((value) => value === undefined || isValidIban(value), {
         message: 'Must be a valid Czech IBAN (CZ and 22 digits)',
       }),
+    // Email to the seller about new orders (spec 6.8, Resend). Without a key the
+    // messages are only logged. With a key, both addresses are required. The key
+    // is never committed: set per environment.
+    RESEND_API_KEY: optionalText,
+    SELLER_NOTIFY_EMAIL: optionalText,
+    NOTIFY_FROM_EMAIL: optionalText,
   })
   .superRefine((env, ctx) => {
     for (const name of ['SELLER_NOTIFY_EMAIL', 'NOTIFY_FROM_EMAIL'] as const) {

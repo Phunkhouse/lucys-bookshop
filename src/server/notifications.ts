@@ -23,7 +23,9 @@ const orderId = z.uuid()
 
 // Tells the seller about one new order, at least once (spec 6.8): the mark is
 // written after the send, so a crash in between can mean a second mail but
-// never a lost one. A failure is reported, not thrown, because the buyer's
+// never a lost one. Checkout and the retry could in theory both send for the
+// same order at once; the 10-minute minimum age of the retry makes that very
+// unlikely, and a double mail is the accepted price of never losing one. A failure is reported, not thrown, because the buyer's
 // checkout must never fail on the seller's mail. The order stays unmarked and
 // notifyUnnotifiedOrders finds it again.
 export async function notifySellerOfNewOrder(
@@ -69,10 +71,19 @@ export async function notifySellerOfNewOrder(
     return 'failed'
   }
 
-  await db
-    .update(orders)
-    .set({ sellerNotifiedAt: now })
-    .where(and(eq(orders.id, order.id), isNull(orders.sellerNotifiedAt)))
+  // The mail is out. If the mark fails, the order is sent again next time, but
+  // the orders after it must not be held up: a retry batch goes on.
+  try {
+    await db
+      .update(orders)
+      .set({ sellerNotifiedAt: now })
+      .where(and(eq(orders.id, order.id), isNull(orders.sellerNotifiedAt)))
+  } catch (error) {
+    console.error(
+      `Marking order ${order.number} as announced failed:`,
+      error instanceof Error ? error.message : 'unknown error',
+    )
+  }
   return 'sent'
 }
 

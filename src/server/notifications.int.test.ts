@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '@/server/db/client'
 import { orderItems, orders } from '@/server/db/schema'
 import {
@@ -18,6 +18,7 @@ const context = { adminBaseUrl: 'https://shop.example', now }
 const NO_ID = '00000000-0000-4000-8000-000000000000'
 
 beforeEach(resetDatabase)
+afterEach(() => vi.restoreAllMocks())
 
 async function seed(
   overrides: Partial<typeof orders.$inferInsert> = {},
@@ -225,6 +226,25 @@ describe('notifyUnnotifiedOrders', () => {
       c.number,
       b.number,
     ])
+  })
+
+  // The mail is out; a failing database write after it must not stop the
+  // orders that come next. The unmarked one is sent again next time, which is
+  // the at-least-once trade.
+  it('carries on when marking one order fails after its mail went out', async () => {
+    const notifier = new FakeNotifier()
+    const a = await seed({ createdAt: at(-2 * HOUR) })
+    const b = await seed({ createdAt: at(-1 * HOUR) })
+    vi.spyOn(db, 'update').mockImplementationOnce(() => {
+      throw new Error('The database is busy')
+    })
+
+    const result = await notifyUnnotifiedOrders(notifier, context)
+
+    expect(result).toEqual({ sent: 2, failed: 0 })
+    expect(notifier.orders.map((o) => o.number)).toEqual([a.number, b.number])
+    expect(await notifiedAt(a.id)).toBeNull()
+    expect(await notifiedAt(b.id)).toEqual(now)
   })
 
   it('does nothing when there is nothing to send', async () => {
