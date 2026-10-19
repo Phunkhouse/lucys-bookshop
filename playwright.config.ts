@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { E2E_JOBS_SECRET } from './e2e/jobs-fixtures'
 import { TEST_IBAN } from './src/server/test-iban'
 
 export default defineConfig({
@@ -19,7 +20,12 @@ export default defineConfig({
     // The seller's account for the QR code on the order page: a made-up one,
     // built at run time. A server that was already running keeps its own.
     // No real mail from the tests: an empty key means "only log", whatever .env has.
-    env: { SELLER_IBAN: TEST_IBAN, RESEND_API_KEY: '' },
+    env: {
+      SELLER_IBAN: TEST_IBAN,
+      RESEND_API_KEY: '',
+      // A made-up secret, so the job endpoint can be tested.
+      JOBS_SECRET: E2E_JOBS_SECRET,
+    },
     timeout: 120_000,
   },
 })

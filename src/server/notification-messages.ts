@@ -71,3 +71,37 @@ export function newOrderMessage(order: NotifiableOrder): NotificationMessage {
     }),
   }
 }
+
+// An unpaid order whose reservation ends soon (spec 6.4). Like the new-order
+// mail, no contact details: the admin link is one tap away.
+export type ExpiringOrder = {
+  number: number
+  name: string
+  totalMinor: number
+  currency: string
+  expiresAt: Date
+  adminUrl: string
+}
+
+// One mail for all orders due in a run, in the order given (the caller sorts).
+export function reservationReminderMessage(
+  orders: ExpiringOrder[],
+): NotificationMessage {
+  const t = messages.Notifications.reminder
+  const lines = orders
+    .map((order) =>
+      fill(t.order, {
+        number: order.number,
+        name: order.name,
+        total: money(order.totalMinor, order.currency),
+        deadline: deadlineFormat.format(order.expiresAt),
+        link: order.adminUrl,
+      }),
+    )
+    .join('\n')
+
+  return {
+    subject: fill(t.subject, { count: orders.length }),
+    text: fill(t.body, { orders: lines }),
+  }
+}

@@ -1,14 +1,16 @@
 import { ConsoleNotifier } from './console-notifier'
-import type { NotifiableOrder } from './notification-messages'
+import type { ExpiringOrder, NotifiableOrder } from './notification-messages'
 import { ResendNotifier } from './resend-notifier'
 
 // How the seller hears about orders (spec 6.8). Behind an interface so the
 // provider can change (another mail service, a Telegram bot) without touching
-// the order logic. The reservation-expiring reminder is added here with the job
-// that sends it.
+// the order logic.
 export interface SellerNotifier {
   // Rejects when the message could not be sent.
   notifyNewOrder(order: NotifiableOrder): Promise<void>
+  // One message for all orders whose reservation ends soon. Rejects when it
+  // could not be sent.
+  notifyReservationExpiring(orders: ExpiringOrder[]): Promise<void>
 }
 
 export type NotifierConfig = {

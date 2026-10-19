@@ -69,8 +69,19 @@ const envSchema = databaseEnvSchema
     RESEND_API_KEY: optionalText,
     SELLER_NOTIFY_EMAIL: optionalText,
     NOTIFY_FROM_EMAIL: optionalText,
+    // The bearer token of the hourly job endpoint (spec 8), called by a scheduler.
+    // Without it the endpoint is switched off. At least 32 characters; never
+    // committed: set per environment and in the scheduler.
+    JOBS_SECRET: optionalText,
   })
   .superRefine((env, ctx) => {
+    if (env.JOBS_SECRET !== undefined && env.JOBS_SECRET.length < 32) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['JOBS_SECRET'],
+        message: 'Must be at least 32 characters',
+      })
+    }
     for (const name of ['SELLER_NOTIFY_EMAIL', 'NOTIFY_FROM_EMAIL'] as const) {
       const value = env[name]
       if (value === undefined) {
