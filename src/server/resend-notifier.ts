@@ -1,4 +1,9 @@
-import { newOrderMessage, type NotifiableOrder } from './notification-messages'
+import {
+  newOrderMessage,
+  reservationReminderMessage,
+  type ExpiringOrder,
+  type NotifiableOrder,
+} from './notification-messages'
 import type { SellerNotifier } from './notifier'
 
 const RESEND_URL = 'https://api.resend.com/emails'
@@ -23,6 +28,11 @@ export class ResendNotifier implements SellerNotifier {
 
   async notifyNewOrder(order: NotifiableOrder): Promise<void> {
     const { subject, text } = newOrderMessage(order)
+    await this.send(subject, text)
+  }
+
+  async notifyReservationExpiring(orders: ExpiringOrder[]): Promise<void> {
+    const { subject, text } = reservationReminderMessage(orders)
     await this.send(subject, text)
   }
 

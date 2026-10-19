@@ -27,11 +27,13 @@ const imageBaseUrl = z.string().transform((value, ctx) => {
   return trimmed
 })
 
-// An empty value, as .env.example leaves it, counts as not set.
+// An empty value, as .env.example leaves it, counts as not set. Whitespace
+// around a value (a newline pasted into a settings page) is dropped: it would
+// otherwise make a secret differ from the one on the other side for good.
 const optionalText = z
   .string()
   .optional()
-  .transform((value) => (value ? value : undefined))
+  .transform((value) => value?.trim() || undefined)
 
 const envSchema = databaseEnvSchema
   .extend({
@@ -69,8 +71,19 @@ const envSchema = databaseEnvSchema
     RESEND_API_KEY: optionalText,
     SELLER_NOTIFY_EMAIL: optionalText,
     NOTIFY_FROM_EMAIL: optionalText,
+    // The bearer token of the hourly job endpoint (spec 8), called by a scheduler.
+    // Without it the endpoint is switched off. At least 32 characters; never
+    // committed: set per environment and in the scheduler.
+    JOBS_SECRET: optionalText,
   })
   .superRefine((env, ctx) => {
+    if (env.JOBS_SECRET !== undefined && env.JOBS_SECRET.length < 32) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['JOBS_SECRET'],
+        message: 'Must be at least 32 characters',
+      })
+    }
     for (const name of ['SELLER_NOTIFY_EMAIL', 'NOTIFY_FROM_EMAIL'] as const) {
       const value = env[name]
       if (value === undefined) {

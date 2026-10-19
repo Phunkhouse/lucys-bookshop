@@ -506,6 +506,11 @@
       "subject": "Nová objednávka č. {number} ({total})",
       "body": "Nová objednávka č. {number}\n\nKupující: {name}\n\nKnihy:\n{items}\n\nCelkem: {total}\nPlatba: {payment}\nDoručení: {shipping}\nRezervace platí do {deadline}.\n\nDetail objednávky a kontakt na kupujícího najdete v administraci:\n{link}",
       "item": "- {title} ({price})"
+    },
+    "reminder": {
+      "subject": "Brzy vyprší rezervace ({count})",
+      "body": "Tyto objednávky ještě nejsou zaplacené a jejich rezervace brzy skončí:\n\n{orders}\n\nKupujícímu se můžete ozvat z administrace: u objednávky je tlačítko Napsat kupujícímu.",
+      "order": "- č. {number}, {name}, {total}, vyprší {deadline}\n  {link}"
     }
   }
 }
