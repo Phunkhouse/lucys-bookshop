@@ -11,7 +11,10 @@ import { useTranslations } from 'next-intl'
 import { shopConfig } from '@/config/shop'
 import { Link, useRouter } from '@/i18n/navigation'
 import type { CartInput } from '@/lib/cart-schema'
-import { checkoutInputSchema } from '@/lib/checkout-schema'
+import {
+  checkoutInputSchema,
+  SHIPPING_DETAILS_MAX,
+} from '@/lib/checkout-schema'
 import { useCart } from '@/lib/use-cart'
 import { useMoney } from '@/lib/use-money'
 import { randomUuid } from '@/lib/random-uuid'
@@ -434,15 +437,16 @@ export function CheckoutForm({
                 rel="noopener noreferrer"
                 className={css.findPoint}
               >
-                {t('shipping.pickupPointFind')}{' '}
+                {t('shipping.pickupPointFind')}
                 <span className={css.visuallyHidden}>
+                  {' '}
                   {t('shipping.opensInNewTab')}
                 </span>
               </a>
               <input
                 id="checkout-point"
                 placeholder={t('shipping.pickupPointExample')}
-                maxLength={200}
+                maxLength={SHIPPING_DETAILS_MAX}
                 autoComplete="off"
                 aria-invalid={pointField.invalid}
                 aria-describedby={[

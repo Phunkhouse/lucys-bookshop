@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkoutInputSchema } from './checkout-schema'
+import { checkoutInputSchema, SHIPPING_DETAILS_MAX } from './checkout-schema'
 
 const valid = {
   cart: [{ shortId: 'abc123', priceMinorSeen: 18900 }],
@@ -144,5 +144,34 @@ describe('checkoutInputSchema', () => {
     expect(issuePaths({ ...valid, checkoutKey: 'abc' })).toContain(
       'checkoutKey',
     )
+  })
+})
+
+// The form's input and the server's check share one limit, so they cannot drift.
+describe('SHIPPING_DETAILS_MAX', () => {
+  const zasilkovna = { ...valid, shippingMethod: 'zasilkovna' }
+
+  it('is what the server accepts, and not one character more', () => {
+    expect(
+      issuePaths({
+        ...zasilkovna,
+        shippingDetails: 'x'.repeat(SHIPPING_DETAILS_MAX),
+      }),
+    ).not.toContain('shippingDetails')
+    expect(
+      issuePaths({
+        ...zasilkovna,
+        shippingDetails: 'x'.repeat(SHIPPING_DETAILS_MAX + 1),
+      }),
+    ).toContain('shippingDetails')
+  })
+
+  it('counts the text without the spaces around it', () => {
+    expect(
+      issuePaths({
+        ...zasilkovna,
+        shippingDetails: `  ${'x'.repeat(SHIPPING_DETAILS_MAX)}  `,
+      }),
+    ).not.toContain('shippingDetails')
   })
 })

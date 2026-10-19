@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { CART_STORAGE_KEY } from '@/lib/cart-store'
+import { SHIPPING_DETAILS_MAX } from '@/lib/checkout-schema'
 import { renderWithIntl } from '@/lib/render-with-intl'
 import type { CheckoutResult } from '@/server/checkout'
 import type { CartValidation } from '@/server/cart'
@@ -762,7 +763,7 @@ describe('CheckoutForm: finding a Zásilkovna pickup point', () => {
       screen
         .getByLabelText('Výdejní místo Zásilkovny')
         .getAttribute('maxlength'),
-    ).toBe('200')
+    ).toBe(String(SHIPPING_DETAILS_MAX))
   })
 
   it('does not suggest what the browser might autofill', async () => {
