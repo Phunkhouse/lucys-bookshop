@@ -39,4 +39,26 @@ describe('JOBS_SECRET', () => {
       expect(String(error)).not.toContain(short)
     }
   })
+
+  // A newline or space pasted along with the value in a settings page would
+  // otherwise make the secret differ from the scheduler's for good.
+  it('ignores whitespace around the value', () => {
+    const secret = 'j'.repeat(32)
+
+    expect(
+      parseEnv({ ...valid, JOBS_SECRET: `  ${secret}\n` }).JOBS_SECRET,
+    ).toBe(secret)
+  })
+
+  it('counts a value of only whitespace as not set', () => {
+    expect(
+      parseEnv({ ...valid, JOBS_SECRET: ' \n ' }).JOBS_SECRET,
+    ).toBeUndefined()
+  })
+
+  it('measures the length without the whitespace', () => {
+    expect(() =>
+      parseEnv({ ...valid, JOBS_SECRET: `${'j'.repeat(31)}\n` }),
+    ).toThrow(/JOBS_SECRET/)
+  })
 })

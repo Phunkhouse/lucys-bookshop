@@ -22,11 +22,13 @@ type ClaimedRow = {
 // the same as the "Brzy vyprší" flag in the admin list. At exactly the deadline
 // the books are still held, so such an order still counts.
 //
-// At most once: the orders are claimed in one atomic update before anything is
-// sent (SKIP LOCKED, so two runs at the same moment take different orders, never
-// the same). If the send fails the claim is released, and the next run tries
-// again. If the process dies between claim and send, that reminder is lost,
-// which is the accepted price of never sending one twice.
+// At most once, except when a send fails ambiguously: the orders are claimed in
+// one atomic update before anything is sent (SKIP LOCKED, so two runs at the same
+// moment take different orders, never the same). If the send fails the claim is
+// released, and the next run tries again. That can mail twice when the provider
+// accepted the mail but the answer was lost or timed out, which is the lesser
+// evil for a reminder to the seller. If the process dies between claim and send,
+// that reminder is lost, the price of not sending one twice after a crash.
 export async function sendReservationReminders(
   notifier: SellerNotifier,
   { adminBaseUrl, now }: NotifyContext,
@@ -64,7 +66,7 @@ export async function sendReservationReminders(
   if (claimed.length === 0) return { sent: 0, failed: 0 }
 
   // RETURNING has no order: soonest deadline first.
-  const due: ExpiringOrder[] = claimed
+  const due: ExpiringOrder[] = [...claimed]
     .sort(
       (a, b) =>
         a.expiresAt.getTime() - b.expiresAt.getTime() || a.number - b.number,

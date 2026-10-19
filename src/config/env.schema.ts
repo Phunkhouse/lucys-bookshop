@@ -27,11 +27,13 @@ const imageBaseUrl = z.string().transform((value, ctx) => {
   return trimmed
 })
 
-// An empty value, as .env.example leaves it, counts as not set.
+// An empty value, as .env.example leaves it, counts as not set. Whitespace
+// around a value (a newline pasted into a settings page) is dropped: it would
+// otherwise make a secret differ from the one on the other side for good.
 const optionalText = z
   .string()
   .optional()
-  .transform((value) => (value ? value : undefined))
+  .transform((value) => value?.trim() || undefined)
 
 const envSchema = databaseEnvSchema
   .extend({
