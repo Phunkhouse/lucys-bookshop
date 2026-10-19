@@ -36,6 +36,36 @@ CREATE ROLE backup_reader WITH LOGIN PASSWORD '<a long random password>';
 GRANT pg_read_all_data TO backup_reader;
 ```
 
+## The trigger (Cloudflare Worker)
+
+The Worker in `workers/hourly-job/` (the one that calls the hourly job) has a second cron trigger, `41 2 * * *` (02:41 UTC, 03:41 or 04:41 in Prague). It sends `POST /repos/<BACKUP_REPO>/actions/workflows/backup.yml/dispatches` with `{"ref":"main"}` and a fine-grained GitHub token. It retries after a network error, a 5xx, a 408 or a 429, like the hourly job, and fails at once on anything else (a bad token, 401/403/404/422). Its error messages never contain the token.
+
+One-time setup, after the PR with the trigger is merged:
+
+1. **Make the token.** GitHub, your avatar, **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
+   - Name: `lucys-bookshop-backup-trigger`.
+   - Expiration: **No expiration** if GitHub offers it. A token that expires silently stops the backups. If it does not, choose the longest and put the date in your calendar.
+   - Repository access: **Only select repositories**, then `lucys-bookshop`.
+   - **Repository permissions**: **Actions: Read and write**. Nothing else (Metadata: Read-only is added by itself).
+   - Generate, and copy the token into your password manager right away. It is shown once.
+2. **Give it to the Worker** (from `workers/hourly-job/`):
+
+   ```bash
+   pnpm dlx wrangler secret put GITHUB_TOKEN
+   ```
+
+   Paste the token when asked (nothing is shown).
+
+3. **Deploy**, so the second cron trigger is created:
+
+   ```bash
+   pnpm dlx wrangler deploy
+   ```
+
+4. **Check** in the Cloudflare dashboard, the Worker, **Settings → Triggers → Cron Triggers**: both `17 * * * *` and `41 2 * * *` are listed. After the next 02:41 UTC, GitHub **Actions → Backup** shows a run started by `workflow_dispatch`, and the Worker's **Observability** shows `backup dispatched`.
+
+If the token ever leaks, delete it in GitHub (that stops it at once) and make a new one. It can only start workflows of this one repository; it cannot read the repository's secrets or the bucket.
+
 ## Run it by hand
 
 GitHub, **Actions**, **Backup**, **Run workflow**. Do it after changing any of the settings above, and look at the log: the last line names the stored object.
