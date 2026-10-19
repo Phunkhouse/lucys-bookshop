@@ -6,7 +6,6 @@ import { Link } from '@/i18n/navigation'
 import { requireAdmin } from '@/lib/auth'
 import { parseStageFilter, STAGE_FILTERS } from '@/server/admin/order-filter'
 import { listAdminOrders } from '@/server/admin/order-list'
-import type { JobHealth } from '@/server/job-health'
 import { getJobHealth } from '@/server/job-heartbeat'
 import css from '../page.module.scss'
 
@@ -20,11 +19,9 @@ export default async function AdminOrders({
   const now = new Date()
   const { items, counts } = await listAdminOrders(actor, { stage, now })
   const t = await getTranslations('Admin.orders')
-  // Without JOBS_SECRET the job endpoint is off (development, previews): there
-  // is nothing to warn about.
-  const jobHealth: JobHealth = env.JOBS_SECRET
-    ? await getJobHealth(actor, now)
-    : { status: 'ok' }
+  const jobHealth = await getJobHealth(actor, now, {
+    enabled: Boolean(env.JOBS_SECRET),
+  })
 
   return (
     <main className={css.main}>

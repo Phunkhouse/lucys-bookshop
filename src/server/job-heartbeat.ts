@@ -16,11 +16,28 @@ export async function recordJobRun(now: Date): Promise<void> {
     })
 }
 
-// For the admin pages.
+// For the admin pages. Two rules live here, so the pages stay simple:
+// - Not enabled (no JOBS_SECRET: development, previews) means no scheduler is
+//   expected, so there is nothing to warn about and nothing is read.
+// - A side notice must never take an admin page down: if the read fails (the
+//   migration was forgotten, the database hiccups), the page shows no notice
+//   and the error goes to the log.
 export async function getJobHealth(
   _actor: AdminActor,
   now: Date,
+  { enabled = true }: { enabled?: boolean } = {},
 ): Promise<JobHealth> {
-  const [row] = await db.select().from(settings)
-  return jobHealth(row?.jobsLastRunAt ?? null, now)
+  if (!enabled) return { status: 'ok' }
+  try {
+    const [row] = await db
+      .select({ jobsLastRunAt: settings.jobsLastRunAt })
+      .from(settings)
+    return jobHealth(row?.jobsLastRunAt ?? null, now)
+  } catch (error) {
+    console.error(
+      'Reading the hourly job status failed:',
+      error instanceof Error ? error.message : 'unknown error',
+    )
+    return { status: 'ok' }
+  }
 }

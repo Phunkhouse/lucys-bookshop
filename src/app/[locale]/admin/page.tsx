@@ -7,7 +7,6 @@ import { Link } from '@/i18n/navigation'
 import { requireAdmin } from '@/lib/auth'
 import { listAdminBooks } from '@/server/admin/book-list'
 import { parseStatusFilter, STATUS_FILTERS } from '@/server/admin/status-filter'
-import type { JobHealth } from '@/server/job-health'
 import { getJobHealth } from '@/server/job-heartbeat'
 import { deleteBookAction, setBookHiddenAction } from './actions'
 import css from './page.module.scss'
@@ -22,11 +21,9 @@ export default async function AdminHome({
   const now = new Date()
   const { items, counts } = await listAdminBooks(actor, { status, now })
   const t = await getTranslations('Admin')
-  // Without JOBS_SECRET the job endpoint is off (development, previews): there
-  // is nothing to warn about.
-  const jobHealth: JobHealth = env.JOBS_SECRET
-    ? await getJobHealth(actor, now)
-    : { status: 'ok' }
+  const jobHealth = await getJobHealth(actor, now, {
+    enabled: Boolean(env.JOBS_SECRET),
+  })
 
   return (
     <main className={css.main}>
