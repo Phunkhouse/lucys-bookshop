@@ -61,8 +61,8 @@ async function main() {
 
   const bucket = need('R2_BUCKET')
   const s3 = new S3Client({
-    // The bucket is in the EU jurisdiction, which has its own address.
-    endpoint: `https://${need('R2_ACCOUNT_ID')}.eu.r2.cloudflarestorage.com`,
+    // The default address: the bucket has a location hint, not a jurisdiction.
+    endpoint: `https://${need('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
     region: 'auto',
     credentials: {
       accessKeyId: need('R2_ACCESS_KEY_ID'),
