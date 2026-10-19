@@ -1,6 +1,8 @@
 import 'dotenv/config'
 import { mkdtempSync, rmSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
+import { createWriteStream } from 'node:fs'
+import type { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -40,14 +42,22 @@ async function main() {
     process.exit(2)
   }
 
+  const protectedUrls = [
+    process.env.DATABASE_URL,
+    process.env.MIGRATION_DATABASE_URL,
+    process.env.BACKUP_DATABASE_URL,
+  ]
   assertSafeRestoreTarget(values.target, {
     allowRemote: values['allow-remote'],
-    protectedUrls: [
-      process.env.DATABASE_URL,
-      process.env.MIGRATION_DATABASE_URL,
-      process.env.BACKUP_DATABASE_URL,
-    ],
+    protectedUrls,
   })
+  // On a fresh machine after a disaster none of these are set, and then the check
+  // above has nothing to compare with: the address is only as safe as it is typed.
+  if (!protectedUrls.some(Boolean)) {
+    console.warn(
+      'Note: DATABASE_URL, MIGRATION_DATABASE_URL and BACKUP_DATABASE_URL are not set, so the live shop database cannot be recognised. Check the target address yourself.',
+    )
+  }
 
   const bucket = need('R2_BUCKET')
   const s3 = new S3Client({
@@ -91,9 +101,10 @@ async function main() {
       new GetObjectCommand({ Bucket: bucket, Key: key }),
     )
     const ciphertextPath = join(workDir, 'backup.dump.age')
-    await writeFile(ciphertextPath, await object.Body!.transformToByteArray(), {
-      mode: 0o600,
-    })
+    await pipeline(
+      object.Body as Readable,
+      createWriteStream(ciphertextPath, { mode: 0o600 }),
+    )
     console.log('Downloaded. Decrypting and restoring…')
     await restoreBackup({
       ciphertextPath,

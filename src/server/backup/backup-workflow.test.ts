@@ -45,6 +45,20 @@ describe('backup workflow', () => {
     }
   })
 
+  it('uses secrets only on lines of an env block, never in with: or run:', () => {
+    lines.forEach((line, index) => {
+      if (!line.includes('secrets.')) return
+      const indent = line.length - line.trimStart().length
+      const parent = lines
+        .slice(0, index)
+        .reverse()
+        .find(
+          (l) => l.trim() !== '' && l.length - l.trimStart().length < indent,
+        )
+      expect(parent?.trim()).toBe('env:')
+    })
+  })
+
   it('never echoes a secret or traces commands', () => {
     expect(workflow).not.toMatch(/set -\w*x/)
     expect(workflow).not.toMatch(/bash -\w*x/)

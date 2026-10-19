@@ -65,7 +65,7 @@ Practise this once before you need it (the rehearsal is part of M8). It needs Do
    pnpm backup:restore --identity /tmp/age-identity.txt --target postgres://bookshop:<password>@127.0.0.1:5432/restore_check
    ```
 
-   For a remote target add `--allow-remote`. The script refuses a target that is the same database as `DATABASE_URL`, `MIGRATION_DATABASE_URL` or `BACKUP_DATABASE_URL`, so it cannot overwrite the live shop by accident.
+   For a remote target add `--allow-remote`. The script refuses a target that already has tables (a restore into a used database would stop halfway), and a target that is the same database as `DATABASE_URL`, `MIGRATION_DATABASE_URL` or `BACKUP_DATABASE_URL`. That second check only works when those are set in your `.env`. On a fresh machine after a disaster they are not, and the script says so: then the address is only as safe as you type it, so read it twice.
 
 5. Clean up, always:
 
@@ -80,6 +80,10 @@ Practise this once before you need it (the rehearsal is part of M8). It needs Do
 6. Look at the data: `docker compose exec db psql -U bookshop restore_check -c 'select count(*) from books'`. Then `dropdb` it.
 
 To point a real deployment at a restored database, change `DATABASE_URL` and `MIGRATION_DATABASE_URL` in Vercel and redeploy. Do that only deliberately.
+
+## Practise it
+
+The daily run proves a dump can be made and listed (`pg_restore --list`), not that every table can be read back. Only a real restore proves that. Do the steps above once after the first backup, and again every few months, into a throwaway database, and look at the data. A backup that was never restored is a hope, not a backup.
 
 ## Rotating the key
 

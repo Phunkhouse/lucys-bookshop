@@ -86,6 +86,30 @@ describe('restoreBackup', () => {
     }
   }, 120_000)
 
+  it('refuses a database that already has tables and leaves it as it was', async () => {
+    const target = `drill_full_${Date.now()}`
+    created.push(target)
+    await adminPool.query(`CREATE DATABASE ${target}`)
+    const pool = new Pool({ connectionString: urlFor(target), max: 1 })
+    await pool.query(`CREATE TABLE keep_me (id int)`)
+    await pool.query(`INSERT INTO keep_me VALUES (1)`)
+
+    try {
+      await expect(
+        restoreBackup({
+          ciphertextPath: join(dir, 'does-not-matter.age'),
+          identityPath: join(dir, 'does-not-matter.txt'),
+          targetUrl: urlFor(target),
+          workDir: dir,
+        }),
+      ).rejects.toThrow(/already has 1 table/)
+      const { rows } = await pool.query('SELECT id FROM keep_me')
+      expect(rows).toEqual([{ id: 1 }])
+    } finally {
+      await pool.end()
+    }
+  })
+
   it('fails, and writes nothing, with the wrong key', async () => {
     const target = `drill_wrong_${Date.now()}`
     created.push(target)

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
 import { closeSync, openSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
+import { Pool } from 'pg'
 import { forContainer } from './restore-target'
 
 // Newest client: pg_dump can read any server up to its own version, so one image
@@ -77,6 +78,29 @@ export async function dumpDatabase(options: {
   }
 }
 
+// A restore into a database that already has tables would stop halfway and leave
+// a mix of old and restored data, so it is refused before anything is written.
+export async function assertEmptyDatabase(databaseUrl: string): Promise<void> {
+  const pool = new Pool({ connectionString: databaseUrl, max: 1 })
+  try {
+    const { rows } = await pool.query<{ n: number }>(
+      `SELECT count(*)::int AS n
+         FROM pg_class c
+         JOIN pg_namespace ns ON ns.oid = c.relnamespace
+        WHERE c.relkind IN ('r', 'p')
+          AND ns.nspname NOT IN ('pg_catalog', 'information_schema')
+          AND ns.nspname NOT LIKE 'pg_toast%'`,
+    )
+    if (rows[0]!.n > 0) {
+      throw new Error(
+        `The target database already has ${rows[0]!.n} table(s). Restore into a new, empty database.`,
+      )
+    }
+  } finally {
+    await pool.end()
+  }
+}
+
 // Decrypts a backup with the private key and restores it into an empty database.
 // The decrypted dump exists only for the duration of the call.
 export async function restoreBackup(options: {
@@ -85,6 +109,7 @@ export async function restoreBackup(options: {
   targetUrl: string
   workDir: string
 }): Promise<void> {
+  await assertEmptyDatabase(options.targetUrl)
   const plainPath = join(options.workDir, 'restore.dump')
   try {
     await run('age', [
