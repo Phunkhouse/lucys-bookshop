@@ -141,7 +141,9 @@ function repoPath(repo) {
 /**
  * Asks GitHub to run the backup workflow (workflow_dispatch). Resolves when
  * GitHub accepts the request (204, or 200 with the run id). That the backup
- * itself works is reported by the workflow, not here.
+ * itself works is reported by the workflow, not here. Not idempotent: if GitHub
+ * accepts the request but the answer is lost, the retry starts a second run.
+ * That is accepted, a second run only stores one more object.
  *
  * @param {{ GITHUB_TOKEN?: string, BACKUP_REPO?: string }} env
  * @param {{ fetch?: typeof fetch, sleep?: (ms: number) => Promise<unknown> }} [deps]

@@ -64,6 +64,8 @@ One-time setup, after the PR with the trigger is merged:
 
 4. **Check** in the Cloudflare dashboard, the Worker, **Settings → Triggers → Cron Triggers**: both `17 * * * *` and `41 2 * * *` are listed. After the next 02:41 UTC, GitHub **Actions → Backup** shows a run started by `workflow_dispatch`, and the Worker's **Observability** shows `backup dispatched`.
 
+`BACKUP_REPO` is a variable in `workers/hourly-job/wrangler.toml`, so it only reaches the Worker through `wrangler deploy`. A Worker made by pasting `index.js` into the dashboard needs `BACKUP_REPO` (`owner/name`) added by hand under **Settings → Variables and Secrets**.
+
 If the token ever leaks, delete it in GitHub (that stops it at once) and make a new one. It can only start workflows of this one repository; it cannot read the repository's secrets or the bucket.
 
 ## Run it by hand

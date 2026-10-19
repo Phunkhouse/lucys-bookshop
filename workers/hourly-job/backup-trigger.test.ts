@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import worker, {
   BACKUP_CRON,
@@ -184,6 +185,17 @@ describe('dispatchBackup: when the call fails', () => {
 describe('the Worker entry point and the backup', () => {
   it('has a daily time of its own, away from the top of the hour', () => {
     expect(BACKUP_CRON).toBe('41 2 * * *')
+  })
+
+  it('has BACKUP_CRON among the crons of wrangler.toml, next to the hourly one', () => {
+    // The Worker tells the jobs apart by the expression, so an edit to only one of
+    // the two would send the backup tick to the hourly job.
+    const toml = readFileSync('workers/hourly-job/wrangler.toml', 'utf8')
+    const crons = /^crons\s*=\s*\[(.*)\]/m.exec(toml)?.[1] ?? ''
+    const listed = [...crons.matchAll(/"([^"]+)"/g)].map((m) => m[1])
+    expect(listed).toContain(BACKUP_CRON)
+    expect(listed).toContain('17 * * * *')
+    expect(listed).toHaveLength(2)
   })
 
   it('dispatches the backup on its cron and does not call the shop', async () => {
