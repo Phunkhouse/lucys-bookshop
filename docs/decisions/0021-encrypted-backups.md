@@ -12,6 +12,8 @@ Neon's free plan keeps only 6 hours of history, so a bad deploy or a deleted row
 
 A daily `pg_dump` runs in a GitHub Actions workflow, is encrypted with `age` against a public key, and is uploaded to a private Cloudflare R2 bucket. The private key stays with the developer (password manager plus a second independent copy) and is never in GitHub or Cloudflare, so a leaked CI secret cannot expose past dumps. The dump uses a read-only Neon role (`pg_read_all_data`). The workflow is started by the existing Cloudflare Worker, not by GitHub's scheduler. The bucket has a 30-day lock rule and a 35-day lifecycle expiry on `daily/`.
 
+The workflow's last step reports a stored, size-checked backup to the shop (`POST /api/jobs/backup-report`, bearer `BACKUP_REPORT_SECRET`, a different secret from `JOBS_SECRET`). The shop records its own clock, and the admin warns when the last report is older than 36 hours. The warning is on only when the secret is set, so "never reported" means "set up, but no backup yet", and no shop-age rule is needed.
+
 ## Alternatives considered
 
 - A GitHub `schedule` trigger: switched off after 60 days without repository activity, and it can start late.
@@ -25,5 +27,6 @@ A daily `pg_dump` runs in a GitHub Actions workflow, is encrypted with `age` aga
 - If the private key is lost, every backup is unreadable. Hence the second copy, and a restore rehearsal at M8.
 - GitHub secrets hold a read-only database login and an R2 token that can read the bucket, but not decrypt it.
 - The restore script refuses to write into a database that is configured for the shop.
+- The admin warning fails quiet: if the database read fails, the page shows no notice (the same rule as the hourly job), and the error goes to the log.
 - The integration tests need Docker and the `age` command line tool (CI installs it).
 - To revisit: a longer retention, off-site copies in a second provider, and a database dump per month kept longer.

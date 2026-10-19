@@ -393,6 +393,12 @@
       "never": "Hodinová kontrola ještě nikdy neběžela.",
       "stale": "Hodinová kontrola neběžela od {when}.",
       "effect": "Upozornění na končící rezervace a opakované odeslání e-mailů teď nefunguje. Informujte prosím správce obchodu."
+    },
+    "backupHealth": {
+      "title": "Záloha databáze nefunguje",
+      "never": "Záloha databáze ještě nikdy neproběhla.",
+      "stale": "Poslední záloha databáze proběhla {when}.",
+      "effect": "Data obchodu se teď nezálohují. Informujte prosím správce obchodu."
     }
   },
   "Checkout": {

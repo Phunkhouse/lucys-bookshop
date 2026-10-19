@@ -1,0 +1,1 @@
+ALTER TABLE "settings" ADD COLUMN "backup_last_at" timestamp with time zone;

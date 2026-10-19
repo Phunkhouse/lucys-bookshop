@@ -8,7 +8,8 @@ Once a day a Cloudflare Worker asks GitHub to run the workflow `.github/workflow
 
 1. dumps the production database with `pg_dump`, through a **read-only** database role,
 2. encrypts the dump with `age` and the **public** key, so the job cannot read it back,
-3. uploads it to a private R2 bucket as `daily/YYYY-MM-DD/lucys-bookshop-<UTC time>.dump.age`, and checks that the stored size matches.
+3. uploads it to a private R2 bucket as `daily/YYYY-MM-DD/lucys-bookshop-<UTC time>.dump.age`, and checks that the stored size matches,
+4. tells the shop (`POST /api/jobs/backup-report`). The shop records the time, and the admin shows a warning at the top of the books and orders pages when the last report is older than 36 hours, or when none has ever arrived.
 
 The repository is public, so the dump is never an artifact and never leaves the runner unencrypted. Only the private key can read a backup. It is in two places owned by the developer (a password manager, and a second copy somewhere independent) and **nowhere else**: not in GitHub, not in Cloudflare, not in the repo.
 
@@ -35,6 +36,14 @@ The database role is made once, in the Neon SQL editor, with SQL, not with the c
 CREATE ROLE backup_reader WITH LOGIN PASSWORD '<a long random password>';
 GRANT pg_read_all_data TO backup_reader;
 ```
+
+## The warning in the admin
+
+`BACKUP_REPORT_SECRET` is a different secret from `JOBS_SECRET` on purpose: GitHub holds this one, and with it someone can only record that a backup happened, never send mail. Make it with `openssl rand -base64 32`, keep it in the password manager, and set it in **Vercel (Production only) and as a GitHub repository secret**, then redeploy. Leave it unset in Preview. Also add the variable `SHOP_URL` to GitHub (**Variables**), with the shop's `https://` address.
+
+Until `BACKUP_REPORT_SECRET` is set in Vercel, the endpoint answers 503 and the warning is off. Once it is set, the warning shows "never" until the first backup reports, then clears. If the workflow's last step fails with 401, the two values differ; with 503, Vercel has not been redeployed since the secret was set; with 404 or 405, `SHOP_URL` is wrong or redirects (for example http to https, or no-www to www).
+
+The time is the shop's own clock when the report arrives, so the caller cannot backdate a backup. The warning only says that the workflow finished its last step. It does not prove the data can be restored: see "Practise it" below.
 
 ## The trigger (Cloudflare Worker)
 

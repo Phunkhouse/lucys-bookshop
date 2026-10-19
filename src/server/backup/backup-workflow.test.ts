@@ -92,6 +92,19 @@ describe('backup workflow', () => {
     }
   })
 
+  it('reports a finished backup to the shop over https, after the upload', () => {
+    expect(workflow).toContain('/api/jobs/backup-report')
+    expect(workflow).toContain(
+      'BACKUP_REPORT_SECRET: ${{ secrets.BACKUP_REPORT_SECRET }}',
+    )
+    expect(workflow).toContain('vars.SHOP_URL')
+    // The secret must not travel in the clear.
+    expect(workflow).toMatch(/https:\/\/\*\)/)
+    expect(workflow.indexOf('Report to the shop')).toBeGreaterThan(
+      workflow.indexOf('Upload to R2'),
+    )
+  })
+
   it('serialises runs and lets a running one finish', () => {
     expect(block('concurrency').map((line) => line.trim())).toEqual([
       'group: backup',

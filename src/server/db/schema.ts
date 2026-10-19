@@ -259,6 +259,10 @@ export const settings = pgTable(
     // warns when it is older than a few hours, or null: a scheduler that has
     // silently stopped is the one failure nobody would otherwise notice.
     jobsLastRunAt: timestamp('jobs_last_run_at', { withTimezone: true }),
+    // When the backup workflow last reported a finished backup (ADR 0021). The
+    // admin warns when it is older than 36 hours, or null: a backup that has
+    // silently stopped is found out when it is needed, which is too late.
+    backupLastAt: timestamp('backup_last_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
