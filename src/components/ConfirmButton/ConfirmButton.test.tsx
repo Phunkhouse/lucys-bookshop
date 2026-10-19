@@ -113,6 +113,30 @@ describe('ConfirmButton', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
 
+  // Esc is the dialog's own cancel event. Mid-request it must not close the
+  // dialog, or the seller loses the "Ukládám…" feedback.
+  it('ignores Esc while the action runs, and honours it otherwise', async () => {
+    let finish: () => void = () => {}
+    renderButton(
+      vi.fn(() => new Promise<void>((resolve) => (finish = resolve))),
+    )
+    open()
+    const dialog = screen.getByRole('dialog')
+
+    // Not running: Esc is allowed to close it.
+    expect(fireEvent(dialog, new Event('cancel', { cancelable: true }))).toBe(
+      true,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ano, zrušit' }))
+    expect(fireEvent(dialog, new Event('cancel', { cancelable: true }))).toBe(
+      false,
+    )
+
+    finish()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
   it('closes and stays usable when the action throws', async () => {
     const onConfirm = vi.fn().mockRejectedValue(new Error('boom'))
     renderButton(onConfirm)

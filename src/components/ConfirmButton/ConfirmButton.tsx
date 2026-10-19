@@ -77,6 +77,10 @@ export function ConfirmButton({
         ref={dialogRef}
         className={css.dialog}
         aria-labelledby={headingId}
+        // Esc must not close it mid-request: the seller would lose the feedback.
+        onCancel={(event) => {
+          if (pending) event.preventDefault()
+        }}
         onClick={(event) => {
           // A tap on the dimmed area (the dialog element itself) cancels.
           if (event.target === event.currentTarget && !pending) closeDialog()

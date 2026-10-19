@@ -87,6 +87,7 @@ export function OrderActions({
   const router = useRouter()
   const trackingId = useId()
   const noteId = useId()
+  const headingId = useId()
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<Problem | null>(null)
   const [tracking, setTrackingText] = useState(trackingNumber ?? '')
@@ -175,8 +176,8 @@ export function OrderActions({
   )
 
   return (
-    <section className={css.section} aria-labelledby="order-actions">
-      <h2 id="order-actions">{t('heading')}</h2>
+    <section className={css.section} aria-labelledby={headingId}>
+      <h2 id={headingId}>{t('heading')}</h2>
 
       {problem && 'error' in problem && (
         <p role="alert" className={css.problem}>
