@@ -4,6 +4,7 @@ import { BookCard } from '@/components/BookCard'
 import { env } from '@/config/env'
 import { shopConfig } from '@/config/shop'
 import { listCatalog } from '@/server/catalog'
+import { defaultCatalogQuery } from '@/server/catalog-query'
 import css from './page.module.scss'
 
 export default async function Home() {
@@ -12,7 +13,11 @@ export default async function Home() {
   await connection()
 
   const t = await getTranslations()
-  const books = await listCatalog(new Date())
+  // Filters, sorts and pages are wired to the URL in a later M6 step.
+  const { items: books, total } = await listCatalog(
+    defaultCatalogQuery,
+    new Date(),
+  )
 
   return (
     <main className={css.main}>
@@ -28,7 +33,7 @@ export default async function Home() {
           </div>
         ) : (
           <>
-            <p>{t('Catalog.count', { count: books.length })}</p>
+            <p>{t('Catalog.count', { count: total })}</p>
             <ul className={css.grid}>
               {books.map((book, index) => (
                 <li key={book.shortId}>
