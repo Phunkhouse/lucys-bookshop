@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { testActor } from '@/server/auth/test-helpers'
 import { computeSizes } from '@/lib/photo-sizes'
 import { listCatalog } from '@/server/catalog'
+import { defaultCatalogQuery } from '@/server/catalog-query'
 import { db } from '@/server/db/client'
 import { bookImages, books } from '@/server/db/schema'
 import { resetDatabase } from '@/server/db/test-helpers'
@@ -121,7 +122,7 @@ describe('creating a book with photos', () => {
   it('makes the first photo the cover in the shop', async () => {
     const { id } = await createWithPhotos([1200, 600])
 
-    const [cover] = await listCatalog(now)
+    const [cover] = (await listCatalog(defaultCatalogQuery, now)).items
 
     expect(cover.cover?.baseKey).toBe((await rowsOf(id))[0].baseKey)
   })

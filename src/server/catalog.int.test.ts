@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { getBookByShortId, listCatalog } from './catalog'
+import { defaultCatalogQuery } from './catalog-query'
 import {
   addImage,
   createBook,
@@ -17,7 +18,7 @@ beforeEach(resetDatabase)
 
 describe('listCatalog', () => {
   it('returns an empty list when there are no books', async () => {
-    expect(await listCatalog(now)).toEqual([])
+    expect((await listCatalog(defaultCatalogQuery, now)).items).toEqual([])
   })
 
   it('lists available, reserved and recently sold books, and leaves out the rest', async () => {
@@ -34,7 +35,9 @@ describe('listCatalog', () => {
     await createBook({ status: 'sold', soldAt: at(-20 * DAY) })
     await createBook({ status: 'hidden' })
 
-    const ids = (await listCatalog(now)).map((b) => b.shortId)
+    const ids = (await listCatalog(defaultCatalogQuery, now)).items.map(
+      (b) => b.shortId,
+    )
     expect(ids.sort()).toEqual(
       [available, reserved, expired, soldRecently].map((b) => b.shortId).sort(),
     )
@@ -59,7 +62,9 @@ describe('listCatalog', () => {
       createdAt: at(-4 * DAY),
     })
 
-    const order = (await listCatalog(now)).map((b) => b.shortId)
+    const order = (await listCatalog(defaultCatalogQuery, now)).items.map(
+      (b) => b.shortId,
+    )
     expect(order).toEqual([
       newAvailable.shortId, // available, -2d
       expiredReserved.shortId, // counts as available, -4d
@@ -75,7 +80,9 @@ describe('listCatalog', () => {
     await createBook({ shortId: 'aaaaaa', createdAt })
     await createBook({ shortId: 'cccccc', createdAt })
 
-    const order = (await listCatalog(now)).map((b) => b.shortId)
+    const order = (await listCatalog(defaultCatalogQuery, now)).items.map(
+      (b) => b.shortId,
+    )
     expect(order).toEqual(['aaaaaa', 'bbbbbb', 'cccccc'])
   })
 
@@ -93,7 +100,10 @@ describe('listCatalog', () => {
     await createBook({ shortId: 'sold01', status: 'sold', soldAt: at(-DAY) })
 
     const byId = Object.fromEntries(
-      (await listCatalog(now)).map((b) => [b.shortId, b.status]),
+      (await listCatalog(defaultCatalogQuery, now)).items.map((b) => [
+        b.shortId,
+        b.status,
+      ]),
     )
     expect(byId).toEqual({
       expire: 'available',
@@ -111,7 +121,10 @@ describe('listCatalog', () => {
     for (const g of [poetry, crime, novel]) await linkGenre(withGenres.id, g.id)
 
     const byId = Object.fromEntries(
-      (await listCatalog(now)).map((b) => [b.shortId, b.genres]),
+      (await listCatalog(defaultCatalogQuery, now)).items.map((b) => [
+        b.shortId,
+        b.genres,
+      ]),
     )
     expect(byId).toEqual({ genres: ['crime', 'novel', 'poetry'], nogenr: [] })
   })
@@ -124,7 +137,10 @@ describe('listCatalog', () => {
     await addImage(book.id, 2)
 
     const byId = Object.fromEntries(
-      (await listCatalog(now)).map((b) => [b.shortId, b.cover]),
+      (await listCatalog(defaultCatalogQuery, now)).items.map((b) => [
+        b.shortId,
+        b.cover,
+      ]),
     )
     expect(byId.photos).toEqual({
       baseKey: `books/${book.id}/img1`,
@@ -141,7 +157,7 @@ describe('listCatalog', () => {
     }
     for (let p = 0; p < 5; p++) await addImage(book.id, p)
 
-    expect(await listCatalog(now)).toHaveLength(1)
+    expect((await listCatalog(defaultCatalogQuery, now)).items).toHaveLength(1)
   })
 
   it('exposes only the fields the page needs', async () => {
@@ -151,7 +167,7 @@ describe('listCatalog', () => {
       reservedUntil: at(HOUR),
     })
 
-    const [item] = await listCatalog(now)
+    const [item] = (await listCatalog(defaultCatalogQuery, now)).items
     expect(item).toEqual({
       shortId: 'fields',
       title: expect.any(String),

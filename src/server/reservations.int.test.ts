@@ -8,6 +8,7 @@ import {
   resetDatabase,
 } from '@/server/db/test-helpers'
 import { getBookByShortId, listCatalog } from './catalog'
+import { defaultCatalogQuery } from './catalog-query'
 import { BooksUnavailableError, reserveBooks } from './reservations'
 
 const now = new Date('2026-10-18T12:00:00.000Z')
@@ -219,7 +220,7 @@ describe('reserveBooks', () => {
 
     await reserveInTransaction([book.id], order.id)
 
-    const items = await listCatalog(now)
+    const items = (await listCatalog(defaultCatalogQuery, now)).items
     expect(items.find((item) => item.shortId === book.shortId)?.status).toBe(
       'reserved',
     )

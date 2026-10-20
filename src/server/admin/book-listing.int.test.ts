@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { testActor } from '@/server/auth/test-helpers'
 import { getBookByShortId, listCatalog } from '@/server/catalog'
+import { defaultCatalogQuery } from '@/server/catalog-query'
 import { db } from '@/server/db/client'
 import { bookGenres, books, genres } from '@/server/db/schema'
 import {
@@ -72,7 +73,7 @@ describe('createListing', () => {
       soldAt: null,
       isbn: null,
     })
-    const catalog = await listCatalog(now)
+    const catalog = (await listCatalog(defaultCatalogQuery, now)).items
     expect(catalog.map((b) => b.shortId)).toEqual([result.shortId])
     expect(catalog[0].cover).toBeNull()
   })
