@@ -1,0 +1,140 @@
+@use 'utilities' as *;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+// Search and sort sit side by side once there is room.
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  input:not([type='radio']):not([type='checkbox']),
+  select {
+    min-height: rem(48);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-width) solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+
+    &:focus-visible {
+      outline: var(--focus-width) solid var(--color-focus);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.filters {
+  border: var(--border-width) solid var(--color-border);
+
+  summary {
+    display: flex;
+    align-items: center;
+    min-height: rem(48);
+    padding-inline: var(--space-4);
+    font-weight: 700;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: var(--focus-width) solid var(--color-focus);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(rem(220), 1fr));
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+
+  legend {
+    padding: 0;
+    margin-bottom: var(--space-2);
+    font-weight: 700;
+  }
+}
+
+// A large touch target: the whole row is the label.
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: rem(48);
+
+  input {
+    flex: none;
+    width: rem(24);
+    height: rem(24);
+    accent-color: var(--color-accent);
+
+    &:focus-visible {
+      outline: var(--focus-width) solid var(--color-focus);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.submit {
+  min-height: rem(48);
+  padding: var(--space-3) var(--space-5);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+.reset {
+  display: inline-flex;
+  align-items: center;
+  min-height: rem(48);
+  color: inherit;
+  text-underline-offset: 0.2em;
+
+  &:focus-visible {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+@include from(rem(720)) {
+  .form {
+    display: grid;
+    grid-template-columns: 1fr rem(240);
+    align-items: end;
+  }
+
+  .filters,
+  .actions {
+    grid-column: 1 / -1;
+  }
+}

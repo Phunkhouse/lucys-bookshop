@@ -28,6 +28,41 @@
     "empty": {
       "title": "Zatím tu nejsou žádné knihy.",
       "hint": "Zkuste to prosím později, nové knihy přibývají."
+    },
+    "search": {
+      "label": "Hledat podle názvu, autora nebo ISBN"
+    },
+    "sort": {
+      "label": "Řadit podle",
+      "newest": "Nejnovější",
+      "price-asc": "Od nejlevnější",
+      "price-desc": "Od nejdražší",
+      "title": "Název A–Z",
+      "author": "Autor A–Z"
+    },
+    "filters": {
+      "toggle": "Filtry",
+      "toggleActive": "Filtry ({count})",
+      "genre": "Žánr",
+      "condition": "Stav",
+      "language": "Jazyk",
+      "price": "Cena",
+      "priceMin": "Cena od (Kč)",
+      "priceMax": "Cena do (Kč)",
+      "available": "Jen dostupné knihy",
+      "apply": "Zobrazit",
+      "reset": "Zrušit hledání a filtry"
+    },
+    "noResults": {
+      "title": "Žádná kniha neodpovídá vašemu výběru.",
+      "hint": "Zkuste upravit hledání nebo filtry.",
+      "reset": "Zrušit hledání a filtry"
+    },
+    "pagination": {
+      "label": "Stránkování",
+      "previous": "Předchozí",
+      "next": "Další",
+      "page": "Stránka {page}"
     }
   },
   "Book": {
