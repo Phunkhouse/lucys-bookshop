@@ -18,7 +18,12 @@ test.describe('catalog', () => {
 
     await expect(page.getByText('26 knih')).toBeVisible()
     await expect(card(page, 'Stíny nad Vltavou')).toBeVisible()
+
+    // The catalog has two pages and the statuses are spread over them: find
+    // each book by its title.
+    await page.goto('/?q=Mrtvá schránka')
     await expect(card(page, 'Mrtvá schránka')).toContainText('Rezervováno')
+    await page.goto('/?q=Gardens of Winter')
     await expect(card(page, 'Gardens of Winter')).toContainText('Prodáno')
   })
 
