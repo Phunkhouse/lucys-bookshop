@@ -65,6 +65,12 @@ export const books = pgTable(
     index().on(t.soldAt),
     index().on(t.priceMinor),
     index().on(t.isbn),
+    // Catalog search (ADR 0022). The expression is the one in the
+    // catalog_search_text() function from the add_search_extensions migration.
+    index('books_search_trgm_idx').using(
+      'gin',
+      sql`catalog_search_text(${t.title}, ${t.author}, ${t.isbn}) gin_trgm_ops`,
+    ),
     check('books_short_id_format', sql`${t.shortId} ~ '^[0-9a-z]{6,8}$'`),
     check('books_price_not_negative', sql`${t.priceMinor} >= 0`),
     check('books_currency_format', sql`${t.currency} ~ '^[A-Z]{3}$'`),

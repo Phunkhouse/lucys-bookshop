@@ -1,0 +1,1 @@
+CREATE INDEX "books_search_trgm_idx" ON "books" USING gin (catalog_search_text("title", "author", "isbn") gin_trgm_ops);
