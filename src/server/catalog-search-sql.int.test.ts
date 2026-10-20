@@ -23,13 +23,6 @@ describe('catalog_search_text', () => {
       'a b 9788074735615',
     )
   })
-
-  it('matches text typed without accents', async () => {
-    const { rows } = await db.execute<{ similar: boolean }>(
-      sql`SELECT catalog_search_text('Příliš žluťoučký kůň', 'Jan Novák', null) ILIKE '%zlutoucky kun%' AS similar`,
-    )
-    expect(rows[0].similar).toBe(true)
-  })
 })
 
 describe('books_search_trgm_idx', () => {

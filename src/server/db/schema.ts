@@ -67,6 +67,8 @@ export const books = pgTable(
     index().on(t.isbn),
     // Catalog search (ADR 0022). The expression is the one in the
     // catalog_search_text() function from the add_search_extensions migration.
+    // Changing that function does not reindex: write a new migration that
+    // replaces the function, then drops and recreates this index.
     index('books_search_trgm_idx').using(
       'gin',
       sql`catalog_search_text(${t.title}, ${t.author}, ${t.isbn}) gin_trgm_ops`,
