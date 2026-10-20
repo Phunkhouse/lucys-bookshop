@@ -10,6 +10,7 @@ import { env } from '@/config/env'
 import { shopConfig } from '@/config/shop'
 import { catalogFilterOptions, listCatalog } from '@/server/catalog'
 import {
+  canonicalCatalogPath,
   parseCatalogQuery,
   serializeCatalogQuery,
 } from '@/server/catalog-query'
@@ -21,16 +22,6 @@ type HomeProps = { searchParams: Promise<SearchParams> }
 
 // A view with a search, filters or another sort is not worth indexing (ADR
 // 0022): the plain catalog and the book pages are. Page numbers alone are fine.
-function rawQueryString(params: SearchParams) {
-  const raw = new URLSearchParams()
-  for (const [key, value] of Object.entries(params)) {
-    for (const item of Array.isArray(value) ? value : [value]) {
-      if (item !== undefined) raw.append(key, item)
-    }
-  }
-  return raw.toString()
-}
-
 export async function generateMetadata({
   searchParams,
 }: HomeProps): Promise<Metadata> {
@@ -49,12 +40,9 @@ export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams
   const query = parseCatalogQuery(params)
 
-  // The form sends empty and default values ("q=&sort=newest"). Send the visitor
-  // to the short form of the same view, so links stay clean and shareable.
-  if (rawQueryString(params) !== serializeCatalogQuery(query)) {
-    const clean = serializeCatalogQuery(query)
-    redirect(clean === '' ? '/' : `/?${clean}`)
-  }
+  // Send the visitor to the short form of the same view (see the function).
+  const clean = canonicalCatalogPath(params)
+  if (clean !== null) redirect(clean)
 
   const [{ items: books, total, page, pageCount }, options] = await Promise.all(
     [listCatalog(query, now), catalogFilterOptions(now)],
