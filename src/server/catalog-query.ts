@@ -142,3 +142,18 @@ export function serializeCatalogQuery(query: CatalogQuery): string {
   }
   return params.toString()
 }
+
+// Where to send a visitor whose URL is not the short form of its view, or null
+// when it already is. A GET form sends empty and default values ("q=&sort=newest"),
+// and links may carry unknown or repeated keys: all of them lead to the same
+// clean URL, so shared links stay tidy. Parsing the clean URL gives itself back,
+// so this never redirects twice.
+export function canonicalCatalogPath(params: RawParams): string | null {
+  const raw = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    for (const item of all(value)) raw.append(key, item)
+  }
+  const clean = serializeCatalogQuery(parseCatalogQuery(params))
+  if (raw.toString() === clean) return null
+  return clean === '' ? '/' : `/?${clean}`
+}

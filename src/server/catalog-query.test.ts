@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { bookCondition } from './db/schema'
 import {
   CATALOG_PAGE_SIZE,
+  canonicalCatalogPath,
   defaultCatalogQuery,
   parseCatalogQuery,
   serializeCatalogQuery,
@@ -302,5 +303,80 @@ describe('serializeCatalogQuery', () => {
     const a = parseCatalogQuery({ genre: ['scifi', 'crime'], page: '2' })
     const b = parseCatalogQuery({ page: '2', genre: ['crime', 'scifi'] })
     expect(serializeCatalogQuery(a)).toBe(serializeCatalogQuery(b))
+  })
+})
+
+describe('canonicalCatalogPath', () => {
+  it('needs no redirect for the plain catalog and for clean URLs', () => {
+    expect(canonicalCatalogPath({})).toBeNull()
+    expect(canonicalCatalogPath({ genre: 'crime' })).toBeNull()
+    expect(
+      canonicalCatalogPath({
+        q: 'Karel Čapek',
+        genre: ['crime', 'novel'],
+        min: '50',
+        sort: 'title',
+        page: '2',
+      }),
+    ).toBeNull()
+  })
+
+  it('sends the empty and default values of a form submit to the short form', () => {
+    expect(
+      canonicalCatalogPath({
+        q: '',
+        sort: 'newest',
+        genre: 'crime',
+        min: '',
+        max: '',
+      }),
+    ).toBe('/?genre=crime')
+    expect(canonicalCatalogPath({ q: '', sort: 'newest' })).toBe('/')
+  })
+
+  it.each([
+    ['page=1', { page: '1' }, '/'],
+    ['an unknown key', { utm_source: 'x', genre: 'crime' }, '/?genre=crime'],
+    ['an invalid value', { sort: 'cheapest', page: '2' }, '/?page=2'],
+    ['a repeated single value', { q: ['a', 'b'] }, '/?q=a'],
+    ['a repeated genre', { genre: ['crime', 'crime'] }, '/?genre=crime'],
+    ['untrimmed text', { q: '  a  b ' }, '/?q=a+b'],
+    ['available=true', { available: 'true' }, '/'],
+  ])('redirects %s', (_, params, target) => {
+    expect(canonicalCatalogPath(params)).toBe(target)
+  })
+
+  it('puts the keys in the fixed order and sorts the genres', () => {
+    expect(
+      canonicalCatalogPath({ page: '2', genre: ['scifi', 'crime'], q: 'x' }),
+    ).toBe('/?q=x&genre=crime&genre=scifi&page=2')
+  })
+
+  it('writes spaces and non-ASCII text the way URLSearchParams does, so a clean URL is left alone', () => {
+    const clean = serializeCatalogQuery({
+      ...defaultCatalogQuery,
+      q: 'Válka s mloky & Čapek',
+    })
+    const params = Object.fromEntries(new URLSearchParams(clean))
+    expect(canonicalCatalogPath(params)).toBeNull()
+  })
+
+  it('never redirects twice: the target is itself canonical', () => {
+    const target = canonicalCatalogPath({
+      q: ' x ',
+      sort: 'newest',
+      genre: ['b', 'a', 'a'],
+      page: '1',
+      junk: '1',
+    })!
+    // Rebuild the parameters the way Next.js hands them over (arrays for
+    // repeated keys).
+    const params = new URLSearchParams(target.split('?')[1] ?? '')
+    const asNext: Record<string, string | string[]> = {}
+    for (const key of new Set(params.keys())) {
+      const values = params.getAll(key)
+      asNext[key] = values.length === 1 ? values[0] : values
+    }
+    expect(canonicalCatalogPath(asNext)).toBeNull()
   })
 })
