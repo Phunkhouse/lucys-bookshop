@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { bookCondition } from './db/schema'
 import {
   CATALOG_PAGE_SIZE,
   defaultCatalogQuery,
@@ -49,6 +50,13 @@ describe('parseCatalogQuery: search text', () => {
     expect(parseCatalogQuery({ q: 'a'.repeat(500) }).q).toHaveLength(100)
   })
 
+  it('does not split an emoji when cutting', () => {
+    const q = parseCatalogQuery({ q: `${'a'.repeat(99)}😀😀` }).q!
+    expect(Array.from(q)).toHaveLength(100)
+    expect(q.endsWith('😀')).toBe(true)
+    expect(q.isWellFormed()).toBe(true)
+  })
+
   it('uses the first value when the key is repeated', () => {
     expect(parseCatalogQuery({ q: ['first', 'second'] }).q).toBe('first')
   })
@@ -76,9 +84,16 @@ describe('parseCatalogQuery: filters', () => {
     expect(parseCatalogQuery({ genre: 'cooking' }).genres).toEqual(['cooking'])
   })
 
-  it('keeps at most 10 genres', () => {
-    const genre = Array.from({ length: 15 }, (_, i) => `genre${i}`)
-    expect(parseCatalogQuery({ genre }).genres).toHaveLength(10)
+  it('keeps at most 10 genres (the first 10 in alphabetical order)', () => {
+    const genre = [...'onmlkjihgfedcba']
+    expect(parseCatalogQuery({ genre }).genres).toEqual([...'abcdefghij'])
+  })
+
+  it('knows every condition the database knows', () => {
+    expect(
+      parseCatalogQuery({ condition: [...bookCondition.enumValues] })
+        .conditions,
+    ).toEqual([...bookCondition.enumValues].sort())
   })
 
   it('reads known conditions and drops unknown ones', () => {
@@ -88,10 +103,11 @@ describe('parseCatalogQuery: filters', () => {
     ).toEqual(['like_new', 'used'])
   })
 
-  it('reads languages as lowercase two-letter codes', () => {
+  it('reads languages as two-letter codes, ignoring case', () => {
     expect(
       parseCatalogQuery({ lang: ['en', 'cs', 'CS', 'english', ''] }).languages,
     ).toEqual(['cs', 'en'])
+    expect(parseCatalogQuery({ lang: 'DE' }).languages).toEqual(['de'])
   })
 
   it('reads the availability toggle only for the value 1', () => {

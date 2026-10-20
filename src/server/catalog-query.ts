@@ -55,6 +55,10 @@ const condition = z.enum(['like_new', 'used'])
 const sort = z.enum(CATALOG_SORTS)
 const wholeNumber = z.string().regex(/^\d+$/)
 
+// Counts characters, not UTF-16 units, so the cut never splits an emoji.
+const truncate = (text: string, max: number) =>
+  Array.from(text).slice(0, max).join('')
+
 const first = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] : value
 
@@ -66,7 +70,10 @@ function validList<T extends string>(
   schema: z.ZodType<T>,
   value: string | string[] | undefined,
 ): T[] {
-  const valid = all(value).filter((v) => schema.safeParse(v).success) as T[]
+  const valid = all(value).flatMap((v) => {
+    const parsed = schema.safeParse(v)
+    return parsed.success ? [parsed.data] : []
+  })
   return [...new Set(valid)].sort()
 }
 
@@ -80,11 +87,10 @@ function crownsToMinor(value: string | string[] | undefined) {
 }
 
 export function parseCatalogQuery(params: RawParams): CatalogQuery {
-  const text = (first(params.q) ?? '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, MAX_SEARCH_LENGTH)
-    .trim()
+  const text = truncate(
+    (first(params.q) ?? '').replace(/\s+/g, ' ').trim(),
+    MAX_SEARCH_LENGTH,
+  ).trim()
 
   let min = crownsToMinor(params.min)
   let max = crownsToMinor(params.max)
@@ -102,7 +108,10 @@ export function parseCatalogQuery(params: RawParams): CatalogQuery {
     q: text === '' ? undefined : text,
     genres: validList(genreKey, params.genre).slice(0, MAX_GENRES),
     conditions: validList(condition, params.condition),
-    languages: validList(languageCode, params.lang),
+    languages: validList(
+      languageCode,
+      all(params.lang).map((l) => l.toLowerCase()),
+    ),
     minPriceMinor: min,
     maxPriceMinor: max,
     onlyAvailable: first(params.available) === '1',
@@ -112,7 +121,8 @@ export function parseCatalogQuery(params: RawParams): CatalogQuery {
 }
 
 // The query string for a query (no leading "?"). Defaults are left out, so the
-// default catalog is the plain path.
+// default catalog is the plain path. Prices must be whole crowns (multiples of
+// 100), which is all the parser produces.
 export function serializeCatalogQuery(query: CatalogQuery): string {
   const params = new URLSearchParams()
   if (query.q) params.set('q', query.q)
