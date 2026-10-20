@@ -51,12 +51,12 @@
       "priceMax": "Cena do (Kč)",
       "available": "Jen dostupné knihy",
       "apply": "Zobrazit",
-      "reset": "Zrušit filtry"
+      "reset": "Zrušit hledání a filtry"
     },
     "noResults": {
       "title": "Žádná kniha neodpovídá vašemu výběru.",
       "hint": "Zkuste upravit hledání nebo filtry.",
-      "reset": "Zrušit filtry"
+      "reset": "Zrušit hledání a filtry"
     },
     "pagination": {
       "label": "Stránkování",

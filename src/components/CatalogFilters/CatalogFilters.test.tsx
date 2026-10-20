@@ -119,10 +119,20 @@ describe('CatalogFilters', () => {
     expect(screen.getByText('Filtry (2)')).toBeDefined()
   })
 
+  it('counts a price range as one filter, whichever ends are set', () => {
+    const { unmount } = render({ minPriceMinor: 5000, maxPriceMinor: 15000 })
+    expect(screen.getByText('Filtry (1)')).toBeDefined()
+    unmount()
+    render({ maxPriceMinor: 15000 })
+    expect(screen.getByText('Filtry (1)')).toBeDefined()
+  })
+
   it('has a submit button and no reset link while nothing is set', () => {
     render()
     expect(screen.getByRole('button', { name: 'Zobrazit' })).toBeDefined()
-    expect(screen.queryByRole('link', { name: 'Zrušit filtry' })).toBeNull()
+    expect(
+      screen.queryByRole('link', { name: 'Zrušit hledání a filtry' }),
+    ).toBeNull()
   })
 
   it.each([
@@ -132,7 +142,9 @@ describe('CatalogFilters', () => {
   ])('offers a reset link back to the whole catalog for %s', (_, query) => {
     render(query)
     expect(
-      screen.getByRole('link', { name: 'Zrušit filtry' }).getAttribute('href'),
+      screen
+        .getByRole('link', { name: 'Zrušit hledání a filtry' })
+        .getAttribute('href'),
     ).toBe('/')
   })
 

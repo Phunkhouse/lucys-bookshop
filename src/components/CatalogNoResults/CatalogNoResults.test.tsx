@@ -10,7 +10,9 @@ describe('CatalogNoResults', () => {
       screen.getByText('Žádná kniha neodpovídá vašemu výběru.'),
     ).toBeDefined()
     expect(
-      screen.getByRole('link', { name: 'Zrušit filtry' }).getAttribute('href'),
+      screen
+        .getByRole('link', { name: 'Zrušit hledání a filtry' })
+        .getAttribute('href'),
     ).toBe('/')
   })
 })

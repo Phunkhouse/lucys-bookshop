@@ -83,6 +83,19 @@ describe('Pagination', () => {
     expect(screen.queryByRole('link', { name: 'Další' })).toBeNull()
   })
 
+  it('marks a gap where pages are left out, and none where they are all shown', () => {
+    const { unmount } = renderWithIntl(
+      <Pagination query={defaultCatalogQuery} page={1} pageCount={5} />,
+    )
+    expect(screen.getAllByText('…')).toHaveLength(1)
+    unmount()
+
+    renderWithIntl(
+      <Pagination query={defaultCatalogQuery} page={3} pageCount={5} />,
+    )
+    expect(screen.queryByText('…')).toBeNull()
+  })
+
   it('shortens a long range to the ends, the current page and its neighbours', () => {
     renderWithIntl(
       <Pagination query={defaultCatalogQuery} page={10} pageCount={20} />,

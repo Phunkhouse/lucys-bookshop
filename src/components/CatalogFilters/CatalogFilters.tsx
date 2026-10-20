@@ -39,8 +39,10 @@ export function CatalogFilters({ query, options }: CatalogFiltersProps) {
     query.genres.length +
     query.conditions.length +
     query.languages.length +
-    (query.minPriceMinor !== undefined ? 1 : 0) +
-    (query.maxPriceMinor !== undefined ? 1 : 0) +
+    // One price range counts once, whichever ends are set.
+    (query.minPriceMinor !== undefined || query.maxPriceMinor !== undefined
+      ? 1
+      : 0) +
     (query.onlyAvailable ? 1 : 0)
   const canReset =
     activeFilters > 0 ||
