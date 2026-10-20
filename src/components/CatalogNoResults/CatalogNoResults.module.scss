@@ -1,0 +1,27 @@
+@use 'utilities' as *;
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-border);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.reset {
+  display: inline-flex;
+  align-items: center;
+  min-height: rem(48);
+  color: inherit;
+  text-underline-offset: 0.2em;
+
+  &:focus-visible {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
